@@ -4,6 +4,7 @@ import {
   pgTable,
   text,
   timestamp,
+  unique,
   varchar,
 } from 'drizzle-orm/pg-core';
 import { categories } from './categories';
@@ -25,6 +26,7 @@ export const timeOfDayRecommendations = pgTable(
       .notNull()
       .defaultNow(),
   },
+  (t) => [unique('uq_time_of_day_recommendations_time_slot').on(t.timeSlot)],
 );
 
 export const categoryTimeBoosts = pgTable('category_time_boosts', {

@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
+import { ApiCookieAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { OrganizationsService } from './organizations.service';
 import { Actor } from '../../auth/actor.decorator';
 import type { ActorContext } from '../../auth/session.guard';
@@ -17,21 +18,32 @@ import {
   UpdateMemberRoleDto,
 } from './dto/create-organization.dto';
 
+@ApiTags('Organizations')
+@ApiCookieAuth('session')
 @Controller('organizations')
 export class OrganizationsController {
   constructor(private readonly orgsService: OrganizationsService) {}
 
   @Get('me')
+  @ApiOperation({ summary: 'Get my organisation', description: 'Returns the organisation the authenticated vendor belongs to.' })
+  @ApiResponse({ status: 200, description: 'Organisation record' })
+  @ApiResponse({ status: 401, description: 'Not authenticated' })
   getMyOrganization(@Actor() actor: ActorContext) {
     return this.orgsService.getMyOrganization(actor);
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Get organisation by ID' })
+  @ApiParam({ name: 'id', example: 'org_01abc' })
+  @ApiResponse({ status: 200, description: 'Organisation record' })
+  @ApiResponse({ status: 404, description: 'Not found' })
   getOrganization(@Param('id') id: string) {
     return this.orgsService.getOrganizationById(id);
   }
 
   @Patch('me')
+  @ApiOperation({ summary: 'Update my organisation', description: 'Updates store profile including availability, delivery options, and prep time.' })
+  @ApiResponse({ status: 200, description: 'Updated organisation' })
   updateOrganization(
     @Actor() actor: ActorContext,
     @Body() dto: UpdateOrganizationDto,
@@ -40,21 +52,30 @@ export class OrganizationsController {
   }
 
   @Patch('me/payout')
+  @ApiOperation({ summary: 'Update payout settings', description: 'Set mobile money or bank account details for vendor payouts.' })
+  @ApiResponse({ status: 200, description: 'Updated payout settings' })
   updatePayout(@Actor() actor: ActorContext, @Body() dto: UpdatePayoutDto) {
     return this.orgsService.updatePayout(actor, dto);
   }
 
   @Delete('me')
+  @ApiOperation({ summary: 'Delete my organisation' })
+  @ApiResponse({ status: 200, description: 'Organisation deleted' })
   deleteOrganization(@Actor() actor: ActorContext) {
     return this.orgsService.deleteOrganization(actor);
   }
 
   @Get('me/members')
+  @ApiOperation({ summary: 'List organisation members' })
+  @ApiResponse({ status: 200, description: 'Array of members' })
   getMembers(@Actor() actor: ActorContext) {
     return this.orgsService.getMembers(actor);
   }
 
   @Patch('me/members/:memberId/role')
+  @ApiOperation({ summary: 'Update member role', description: 'Promote or demote a member between admin and member roles.' })
+  @ApiParam({ name: 'memberId', example: 'member_01abc' })
+  @ApiResponse({ status: 200, description: 'Updated member' })
   updateMemberRole(
     @Actor() actor: ActorContext,
     @Param('memberId') memberId: string,
@@ -64,6 +85,9 @@ export class OrganizationsController {
   }
 
   @Delete('me/members/:memberId')
+  @ApiOperation({ summary: 'Remove a member from the organisation' })
+  @ApiParam({ name: 'memberId', example: 'member_01abc' })
+  @ApiResponse({ status: 200, description: 'Member removed' })
   removeMember(
     @Actor() actor: ActorContext,
     @Param('memberId') memberId: string,
@@ -72,6 +96,8 @@ export class OrganizationsController {
   }
 
   @Get('me/invitations')
+  @ApiOperation({ summary: 'List pending invitations for my organisation' })
+  @ApiResponse({ status: 200, description: 'Array of invitations' })
   getInvitations(@Actor() actor: ActorContext) {
     return this.orgsService.getInvitations(actor);
   }

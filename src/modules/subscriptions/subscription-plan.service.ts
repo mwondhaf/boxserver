@@ -14,15 +14,27 @@ import {
   subscriptionPlanSlots,
 } from '../../db/schema/subscriptions';
 import { IsBoolean, IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Public } from '../../auth/session.guard';
 import type { ActorContext } from '../../auth/session.guard';
 
 export class CreatePlanDto {
+  @ApiProperty({ example: 'Weekly Veggie Box' })
   @IsString() name!: string;
+
+  @ApiProperty({ example: 'weekly-veggie-box' })
   @IsString() slug!: string;
+
+  @ApiPropertyOptional({ example: 'Fresh vegetables delivered every week' })
   @IsString() @IsOptional() description?: string;
+
+  @ApiProperty({ enum: ['weekly', 'biweekly', 'monthly'], example: 'weekly' })
   @IsEnum(['weekly', 'biweekly', 'monthly'] as const) cadence!: string;
+
+  @ApiProperty({ example: 4, description: 'Total number of delivery cycles' })
   @IsInt() @Min(1) totalCycles!: number;
+
+  @ApiProperty({ example: 45000, description: 'Bundle price per cycle in UGX' })
   @IsInt() @Min(0) bundlePricePerCycle!: number;
 }
 

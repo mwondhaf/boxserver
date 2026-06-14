@@ -1,197 +1,401 @@
 # BoxServer
 
-A multi-vendor delivery marketplace platform for Uganda. BoxServer connects **customers**, **vendors** (grocery stores and food restaurants), **riders**, and **platform admins** in a single marketplace, and also supports **guest ordering** and **peer-to-peer parcel delivery**.
+Multi-vendor food & grocery delivery marketplace for Uganda. Connects **customers**, **vendors** (grocery stores and restaurants), **riders**, and **platform admins** in a single API.
 
-This repository contains the **NestJS API**. The TanStack Router web client lives in `web/`.
+---
 
-## What the system does
+## Table of Contents
 
-### 1. Identity, roles and vendor teams
-- Users sign up and are treated as **customers** by default.
-- Platform operators can be granted **admin** or **rider** roles.
-- A **vendor** is a Better Auth **organization** with members who have distinct responsibilities:
-  - **owner** — can edit payout/banking settings and delete the organization.
-  - **admin** — can manage most of the vendor's catalog and orders.
-  - **member** — can manage catalog and orders but cannot touch protected financial/organization settings.
-- Every request derives the actor (`userId`, `platformRole`, active `organizationId`, `orgRole`) from the authenticated session. The client never sends identity in request bodies.
+1. [What BoxServer does](#what-boxserver-does)
+2. [Tech stack](#tech-stack)
+3. [Prerequisites](#prerequisites)
+4. [Step-by-step: bring the system to life](#step-by-step-bring-the-system-to-life)
+   - [1. Clone and install](#1-clone-and-install)
+   - [2. Create your `.env` file](#2-create-your-env-file)
+   - [3. Start the infrastructure (Docker)](#3-start-the-infrastructure-docker)
+   - [4. Set up the database](#4-set-up-the-database)
+   - [5. Start the API](#5-start-the-api)
+   - [6. Explore the API documentation](#6-explore-the-api-documentation)
+   - [7. Create your first admin user](#7-create-your-first-admin-user)
+5. [Authentication flow](#authentication-flow)
+6. [Role guide](#role-guide)
+7. [Core workflows](#core-workflows)
+8. [Project layout](#project-layout)
+9. [Key conventions](#key-conventions)
+10. [Quality gates](#quality-gates)
 
-### 2. Vendor catalog and storefront
-- Vendors manage their own **products**, **variants** (unit, SKU, stock, availability), **prices** (regular, sale, quantity-tiered), **images**, **collections**, and — for food vendors — **modifier groups/options**.
-- Customers discover vendors by **category** and **location**, open a storefront, search/filter products, and view only **available, approved** items with correct customer-facing prices.
-- Ordering is blocked with a clear reason when a vendor is inactive, busy/paused, or outside business hours.
+---
 
-### 3. Cart, pricing and checkout
-- Carts are scoped to a **single vendor**, support registered users and **guest carts** (tracked by session), and expire after inactivity.
-- Checkout produces a transparent price breakdown in **UGX smallest-unit integers**:
-  - item subtotal
-  - per-category markup (when enabled)
-  - service fee
-  - small-order fee
-  - delivery fee
-  - discounts
-  - taxes
-  - total
-- Customers choose a fulfillment type: **platform delivery**, **vendor self-delivery**, or **self-pickup**.
-- Delivery fees are quoted from zone pricing rules (base + per-km × distance × surge, floored at min fee). Out-of-zone or suspended-zone orders are rejected.
-- Promo codes apply only when their eligibility rules, usage limits, and campaign budgets are satisfied.
+## What BoxServer does
 
-### 4. Order lifecycle and fulfillment
-- Orders follow a strict lifecycle:
-  `pending → confirmed → preparing → ready_for_pickup → out_for_delivery → delivered → completed`
-  with `cancelled` and `refunded` paths.
-- Vendors confirm and prepare orders. Food orders gate rider dispatch by the prep-time clock and a configured rider lead time.
-- Vendors can propose **item swaps** for unavailable items; customers accept or reject before a deadline.
-- Every status, payment, fulfillment, and item change is recorded as an immutable audit event with actor identity, role, and monetary snapshots.
-- Unconfirmed orders auto-cancel after a timeout, restock items, and refund already-paid orders.
+| Domain | Capability |
+|--------|-----------|
+| **Identity** | Users, vendor organisations (multi-user teams), roles, member management |
+| **Catalog** | Products, variants, prices, images, modifier groups, collections, categories, brands |
+| **Storefront** | Public vendor/product discovery by category and location |
+| **Cart** | Per-vendor carts for registered users and guests, modifier selections |
+| **Checkout** | Transparent price breakdown (subtotal, delivery, fees, discounts), promo codes |
+| **Orders** | Full lifecycle: pending → confirmed → preparing → ready → in_transit → delivered |
+| **Dispatch** | Rider assignment, pickup/delivery code verification, proof of delivery |
+| **Riders** | Applications, compliance data, stage assignment, live location, ratings |
+| **Parcels** | Point-to-point parcel delivery independent of any vendor |
+| **Zones** | Geographic delivery zones with configurable pricing rules and fare quotes |
+| **Payments** | Ugandan mobile money (MTN/Airtel) via Relworx with webhook reconciliation |
+| **Financial** | Commission splits, BoxWallet ledger integration, vendor wallet management |
+| **Subscriptions** | Vendor-created recurring delivery plans (weekly / biweekly / monthly) |
+| **Promotions** | Discount codes, buy-X-get-Y, free delivery, campaign budgets |
+| **Referrals** | Referral codes and rewards |
+| **Notifications** | In-app notifications on order/parcel lifecycle events |
+| **Realtime** | WebSocket/SSE push for live order status and rider location |
+| **Admin** | Platform settings, approvals, delivery zones, dashboard reports |
 
-### 5. Rider delivery and dispatch
-- Riders register with Uganda-specific compliance data (NIN, driving permit, vehicle, helmet verification, insurance) and are approved by admins.
-- Riders belong to **stages/hubs** and set themselves **online/offline/busy**.
-- Dispatch offers a delivery to a specific eligible rider within an acceptance window; if not accepted, it can be re-offered.
-- Pickup is verified by a vendor-held pickup code (sender code for parcels). Optional delivery code and proof-of-delivery capture are supported.
-- Riders share live location during active jobs; customers and vendors see live tracking over a persistent connection.
-- Riders accrue ratings and earnings; incidents can be reported for admin review and may release a delivery.
-
-### 6. Delivery zones, fares and quotes
-- Admins define geographic delivery zones (center, max distance, active/suspended state) and pricing rules (base fee, per-km rate, min fee, surge multiplier, optional day/hour windows).
-- Quotes are computed by locating the address's zone, measuring distance (mapping provider with haversine fallback), and applying the matching rule.
-- Quotes expire and are linked to the order/parcel they are used for.
-
-### 7. Financial splits, wallets and payouts
-- On payment capture, each order/parcel produces **exactly one financial split** recorded in an external ledger (BoxWallet):
-  - order value → platform commission + vendor remainder
-  - delivery fee → platform cut + rider earnings
-- Commission is selected by precedence: **vendor-level override → delivery-zone mapping → order-level fallback**.
-- Vendors, riders, and customers are mapped to wallets, auto-created on first need.
-- Capture/sync is **idempotent** by correlation key; transient failures retry automatically; quarantined events reprocess once wallets become active; refunds reverse the split exactly once.
-- Rider payouts are batched per earnings period. In-house (salaried) riders do not surface per-order earnings/payouts.
-
-### 8. Mobile money payments
-- Customers pay (and the platform disburses) via Ugandan mobile money (**MTN, Airtel**; UGX only) through Relworx.
-- A collection request moves through: `initiated → pending → success/failed/expired`, driven by provider callbacks.
-- Payments are linked to their order, parcel, or subscription.
-- Order-first checkouts that are never paid are swept and cancelled after a timeout.
-- Duplicate success callbacks capture an order only once.
-
-### 9. Peer-to-peer parcel delivery
-- Senders request parcel delivery independent of any vendor: pickup/dropoff details, package size category, fragile flag, and declared value.
-- Pricing = package fee (size fee × fragile multiplier + insurance) + zone delivery fee.
-- Parcels flow through the same dispatch, pickup/delivery code, proof-of-delivery, and audit machinery as orders.
-- On capture, the package fee is platform revenue and the delivery fee is rider earnings.
-
-### 10. Promotions, campaigns and referrals
-- Admins and vendors run promotions (standard or buy-get) with fixed/percentage discounts, application targets (items, shipping, order), allocation methods (each/across), eligibility rules, and usage limits.
-- Campaigns can have spend- or usage-based budgets that gate availability.
-- Customers have referral codes. Successful referrals that meet the minimum qualifying order are rewarded according to platform settings, optionally boosted by an active campaign.
-
-### 11. Prepaid subscription plans
-- Food/grocery vendors publish finite prepaid plans (e.g. a 4-cycle weekly pack) with included items, cadence, per-cycle price, and capacity-limited delivery windows.
-- Customers pay the grand total upfront. Plan and slot details are snapshotted so vendor edits do not affect in-flight subscriptions.
-- Each cycle, a scheduled process mints an order, records the per-cycle financial split, and decrements remaining cycles.
-- Subscriptions can be paused, skipped, resumed, cancelled (refunding only unfulfilled cycles), or completed.
-
-### 12. Platform administration
-- Admins configure platform-wide settings: enabled payment methods and instructions, service toggles (grocery/parcels), markup/service-fee/small-order-fee policy, referral policy, and support contacts.
-- Admins manage the master catalog, category pricing rules, vendor and rider approvals, delivery zones, and commission mappings.
-- Admins view operational dashboards and reports (orders, revenue, vendor and rider performance) for a chosen period.
-
-### Realtime
-- Live updates for order/parcel status changes and rider location are pushed to subscribed actors over a **WebSocket/SSE** connection within seconds of the change.
+---
 
 ## Tech stack
 
 | Layer | Technology |
-|-------|------------|
+|-------|-----------|
 | API framework | NestJS 11 + Express |
-| Auth | Better Auth with organization plugin |
+| Auth | Better Auth (email/password + organisation plugin) |
 | Database | PostgreSQL 16 |
-| ORM | Drizzle ORM (Relational Query Builder; raw SQL only for admin aggregates) |
-| Validation | class-validator / class-transformer DTOs |
-| Realtime | WebSocket/SSE |
-| External money | BoxWallet ledger client, Relworx mobile-money client |
-| Client | TanStack Router + Legend State + TanStack Query (in `web/`) |
-| Money | Integer UGX smallest unit |
-| Timezone | Africa/Kampala |
+| ORM | Drizzle ORM (Relational Query Builder) |
+| Cache / sessions | Redis (optional — degrades gracefully without it) |
+| Validation | class-validator / class-transformer |
+| Realtime | Socket.io (WebSocket) |
+| Payments | Relworx mobile money |
+| Wallets | BoxWallet ledger API |
+| Storage | S3-compatible (Cloudflare R2 recommended) |
+| API docs | Scalar (served at `/reference`) |
+
+---
+
+## Prerequisites
+
+| Tool | Version | Notes |
+|------|---------|-------|
+| Node.js | 22+ | |
+| Docker + Docker Compose | any recent | Used to run Postgres + Redis locally |
+| npm | 10+ | Comes with Node |
+
+---
+
+## Step-by-step: bring the system to life
+
+### 1. Clone and install
+
+```bash
+git clone <your-repo-url>
+cd boxserver
+npm install
+```
+
+---
+
+### 2. Create your `.env` file
+
+Copy the template below and save it as `.env` in the project root.
+
+```env
+# ── Required ───────────────────────────────────────────────────────────────
+DATABASE_URL=postgres://boxserver:boxserver@localhost:5432/boxserver
+BETTER_AUTH_SECRET=change-me-to-a-random-string-at-least-32-chars
+
+# ── Optional (app works without these, but features degrade) ───────────────
+
+# Public URL of this server (used in auth email links)
+BETTER_AUTH_URL=http://localhost:3000
+
+# Redis — enables session caching and rate-limit storage
+REDIS_URL=redis://localhost:6379
+
+# BoxWallet — financial commission splits are disabled without this
+BOXWALLET_BASE_URL=https://px.boxkubox.com/api/v1
+BOXWALLET_API_KEY=
+
+# Relworx — mobile money payments are disabled without this
+RELWORX_API_KEY=
+RELWORX_WEBHOOK_SECRET=
+
+# S3-compatible storage — presigned image uploads are disabled without this
+STORAGE_ENDPOINT=https://<account>.r2.cloudflarestorage.com
+STORAGE_BUCKET=boxserver
+STORAGE_ACCESS_KEY_ID=
+STORAGE_SECRET_ACCESS_KEY=
+
+# Distance provider key — falls back to haversine without this (less accurate)
+DISTANCE_PROVIDER_KEY=
+
+# Defaults
+DEFAULT_CURRENCY=UGX
+DEFAULT_TIMEZONE=Africa/Kampala
+PORT=3000
+ALLOWED_ORIGINS=http://localhost:5173
+```
+
+> **Tip:** Generate a strong `BETTER_AUTH_SECRET` with:
+> ```bash
+> node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+> ```
+
+---
+
+### 3. Start the infrastructure (Docker)
+
+The dev Docker Compose file starts Postgres and Redis for you.
+
+```bash
+docker compose -f docker-compose.dev.yml up db redis -d
+```
+
+Wait a few seconds for Postgres to be ready (health check turns green).
+
+To run the **full stack** in Docker (including the API, with hot-reload):
+
+```bash
+docker compose -f docker-compose.dev.yml up --build
+```
+
+> **Note:** The first time you run `--build`, Docker installs all npm packages. Subsequent starts are fast because node_modules are cached in the container layer.
+
+---
+
+### 4. Set up the database
+
+Push the schema and seed reference data (categories, zones, pricing rules):
+
+```bash
+npm run db:push    # creates all tables from the Drizzle schema
+npm run db:seed    # seeds categories, delivery zones, and pricing rules
+```
+
+To inspect the database visually:
+
+```bash
+npm run db:studio  # opens Drizzle Studio in your browser at http://localhost:4983
+```
+
+---
+
+### 5. Start the API
+
+```bash
+npm run start:dev
+```
+
+You should see:
+
+```
+BoxServer running on :3000
+```
+
+The API is now available at `http://localhost:3000/api`.
+
+---
+
+### 6. Explore the API documentation
+
+Open your browser and navigate to:
+
+```
+http://localhost:3000/reference
+```
+
+This opens the **Scalar API Reference** — a beautiful, interactive API explorer. Every endpoint is documented with:
+
+- Required and optional fields with examples
+- Authentication requirements
+- Response schemas
+- Descriptions of what each endpoint does and when to use it
+
+You can also view the raw OpenAPI JSON at `http://localhost:3000/api/openapi-json`.
+
+---
+
+### 7. Create your first admin user
+
+The API uses **Better Auth** for authentication. Sign up and then promote yourself to admin.
+
+**Step 1 — Create an account** (POST to Better Auth sign-up):
+
+```bash
+curl -X POST http://localhost:3000/api/auth/sign-up/email \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Platform Admin",
+    "email": "admin@example.com",
+    "password": "your-strong-password"
+  }'
+```
+
+**Step 2 — Sign in** to get a session cookie:
+
+```bash
+curl -c cookies.txt -X POST http://localhost:3000/api/auth/sign-in/email \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "admin@example.com",
+    "password": "your-strong-password"
+  }'
+```
+
+**Step 3 — Get your user ID** (the session cookie is set automatically):
+
+```bash
+curl -b cookies.txt http://localhost:3000/api/me
+```
+
+**Step 4 — Promote yourself to admin** by updating the database directly (since there's no bootstrap admin yet):
+
+```bash
+# Using psql
+psql "postgres://boxserver:boxserver@localhost:5432/boxserver" \
+  -c "UPDATE \"user\" SET platform_role = 'admin' WHERE email = 'admin@example.com';"
+```
+
+You are now a platform admin. All subsequent API calls use the session cookie (`cookies.txt`) stored in step 2.
+
+---
+
+## Authentication flow
+
+BoxServer uses **session cookies** managed by Better Auth. There are no API tokens for browser/mobile clients.
+
+```
+1. POST /api/auth/sign-up/email   → create account
+2. POST /api/auth/sign-in/email   → receive session cookie (HTTP-only, secure)
+3. GET  /api/me                   → verify session, get actor context
+4. All API calls                  → cookie is sent automatically by the browser
+```
+
+All auth routes live at `/api/auth/*` and are handled directly by Better Auth. See the [Better Auth docs](https://better-auth.com) for the full list of routes (password reset, email verification, organisation management, etc.).
+
+### Vendor organisations
+
+A **vendor** is a Better Auth **organisation**. Create one via the Better Auth API:
+
+```bash
+# Create an organisation (makes the caller the owner)
+curl -b cookies.txt -X POST http://localhost:3000/api/auth/organization/create \
+  -H "Content-Type: application/json" \
+  -d '{ "name": "My Store", "slug": "my-store" }'
+```
+
+Once created, use the vendor endpoints (`/api/vendor/*`) with the organisation's session active.
+
+---
+
+## Role guide
+
+| Role | How to get it | What they can do |
+|------|--------------|-----------------|
+| `customer` | Default on sign-up | Browse storefront, place orders, track deliveries, manage parcels |
+| `vendor` | Create a Better Auth organisation | Manage catalog, fulfil orders, view wallet |
+| `rider` | POST /api/rider/apply + admin approval | Accept dispatches, update location, report incidents |
+| `admin` | Database update (first admin) or `PATCH /api/admin/users/:id/role` | Everything |
+
+---
+
+## Core workflows
+
+### Placing an order (customer)
+
+```
+1. GET  /api/storefront/vendors          → browse vendors
+2. GET  /api/storefront/vendors/:slug    → view vendor
+3. GET  /api/storefront/vendors/:orgId/products → browse products
+4. POST /api/quotes                      → get delivery fee quote
+5. POST /api/cart/org/:orgId             → create/get cart
+6. POST /api/cart/:cartId/items          → add items
+7. POST /api/checkout/quote              → see full price breakdown
+8. POST /api/checkout/place              → place the order
+9. GET  /api/orders/:id                  → track order
+```
+
+### Vendor order flow
+
+```
+1. GET  /api/v/orders?status=pending     → see incoming orders
+2. PUT  /api/v/orders/:id/confirm        → accept (set est. prep time)
+3. PUT  /api/v/orders/:id/prepare        → mark as preparing
+4. PUT  /api/v/orders/:id/ready          → mark ready for pickup
+5. POST /api/v/orders/:id/pickup-code    → verify rider's pickup code
+```
+
+### Rider delivery flow
+
+```
+1. PUT  /api/rider/status                → set online
+2. PUT  /api/rider/location              → update GPS position
+3. POST /api/dispatch/:orderId/accept    → accept a delivery
+4. POST /api/dispatch/:orderId/pickup    → confirm pickup (vendor code)
+5. POST /api/dispatch/:orderId/deliver   → confirm delivery (optional photo key)
+```
+
+### Adding a product (vendor)
+
+```
+1. POST /api/vendor/catalog/products          → create product
+2. POST /api/vendor/catalog/variants          → add a variant (1kg, 500g, etc.)
+3. POST /api/vendor/catalog/variants/:id/price → set price in UGX
+4. POST /api/vendor/catalog/products/:id/image-upload → get upload URL
+5. PATCH /api/admin/catalog/products/:id/approve → (admin) approve for storefront
+```
+
+---
 
 ## Project layout
 
 ```text
 src/
-├── main.ts                    # NestJS bootstrap
-├── app.module.ts              # root module
-├── auth/                      # Better Auth handler, session guard, actor context, ability/policy layer
-├── common/                    # validation pipe, money/UGX utils, geohash, error filters, config, Redis
-├── db/                        # Drizzle schema, relations, client, migrations, seeders
-├── realtime/                  # WebSocket/SSE gateway, event bus
-└── modules/                   # one NestJS module per domain
-    ├── identity/              # users, organizations, members
-    ├── catalog/               # products, variants, prices, modifiers, collections
-    ├── cart/                  # carts, items, modifiers, saved addresses
-    ├── checkout/              # pricing engine, fees, fulfillment, order placement
-    ├── orders/                # lifecycle, swaps, audit events
-    ├── riders/                # profiles, compliance, stages, ratings, incidents
-    ├── dispatch/              # offer/accept, pickup/delivery codes
-    ├── zones/                 # zones, pricing rules, quotes
-    ├── financial/             # BoxWallet client, wallet mappings, splits, payouts, refunds
-    ├── payments/              # Relworx mobile money, callbacks, sweeps
-    ├── parcels/               # P2P parcel requests, pricing, dispatch
-    ├── promotions/            # promotions, campaigns, application engine
-    ├── referrals/             # referral codes, rewards
-    ├── subscriptions/         # plans, slots, subscriptions, cycles
-    ├── platform-settings/     # singleton platform configuration
-    ├── admin/                 # dashboards, reports, approvals
-    ├── notifications/         # actor notifications on lifecycle events
-    └── scheduling/            # cron jobs (sweeps, retries, cycles, recommendations)
-
-web/                           # TanStack Router client
-specs/001-marketplace-platform/# feature specs, data model, contracts, plan
+├── main.ts                    # bootstrap, Swagger, security headers, CORS
+├── app.module.ts              # root module wiring
+├── auth/                      # Better Auth handler, session guard, actor context
+│   └── ability/               # CASL ability factory, policies guard
+├── common/                    # validation pipe, exception filter, config, storage, Redis
+├── db/                        # Drizzle schema (schema/), client, migrations, seed
+├── realtime/                  # Socket.io gateway and event bus
+└── modules/
+    ├── identity/              # users, organizations, members, invitations
+    ├── catalog/               # products, variants, prices, modifiers, images
+    ├── cart/                  # carts, cart items, customer addresses
+    ├── checkout/              # pricing engine, order placement
+    ├── orders/                # order lifecycle, swaps, cancellations
+    ├── riders/                # profiles, stages, ratings, incidents
+    ├── dispatch/              # rider assignment, pickup/delivery confirmation
+    ├── zones/                 # delivery zones, pricing rules, fare quotes
+    ├── financial/             # BoxWallet client, commission splits, wallets
+    ├── payments/              # Relworx mobile money, webhook handling
+    ├── parcels/               # P2P parcel delivery
+    ├── promotions/            # promo codes, campaigns
+    ├── referrals/             # referral codes and rewards
+    ├── subscriptions/         # recurring delivery plans and subscriptions
+    ├── notifications/         # user notification inbox
+    ├── admin/                 # dashboards, reports, platform settings
+    └── scheduling/            # cron jobs (order sweeps, payment retries, cycles)
 ```
 
-## Getting started
-
-### Prerequisites
-- Node.js 22+
-- PostgreSQL 16 (local or Docker)
-- Access/keys for external services (BoxWallet ledger, Relworx mobile money, object storage, distance provider) — or their sandbox equivalents
-
-### Environment
-Create `.env` at the repo root. See `specs/001-marketplace-platform/quickstart.md` for the full variable list.
-
-### Install and set up the database
-```bash
-npm install
-npm run db:push     # create schema via drizzle-kit
-npm run db:seed     # seed categories, zones, pricing rules, demo vendor + products, demo rider
-```
-
-### Run
-```bash
-# API (includes REST, /api/auth, and WebSocket gateway)
-npm run start:dev
-
-# Client
-npm run dev   # inside web/
-```
-
-### Quality gates
-Per project constitution, **no unit or UX tests are authored**. Quality relies on:
-```bash
-npm run build   # TypeScript strict compilation
-npm run lint    # eslint + prettier
-```
+---
 
 ## Key conventions
 
-- **No barrel files** — import directly.
-- **No manual SQL joins** — multi-table reads use Drizzle RQB `with`.
-- **Identity is session-derived** — never accept `userId` or role in request bodies.
-- **Money is integer UGX** — no decimals.
-- **Validate at every boundary** — every endpoint uses a `class-validator` DTO behind a global `ValidationPipe`.
+| Convention | Rule |
+|-----------|------|
+| **No barrel files** | Always import directly from the source file. Barrel files (`index.ts` re-exports) cause OOM crashes during Vite dev. |
+| **No manual SQL joins** | Use Drizzle RQB `with:` for relations. Raw SQL only in admin aggregate queries. |
+| **Identity from session** | Never accept `userId` in request bodies. Derive it from `ctx.auth` or `req.actor`. |
+| **Money is integer UGX** | `3500` means UGX 3,500. Never store floats for money. |
+| **Validate at every boundary** | Every endpoint uses `class-validator` DTOs via the global `ValidationPipe`. |
+| **No bounded queries** | Use `.take(n)` instead of `.collect()` on large tables. |
 
-## Documentation
+---
 
-- Feature spec: `specs/001-marketplace-platform/spec.md`
-- Implementation plan: `specs/001-marketplace-platform/plan.md`
-- Data model: `specs/001-marketplace-platform/data-model.md`
-- API contracts: `specs/001-marketplace-platform/contracts/`
-- Developer quickstart: `specs/001-marketplace-platform/quickstart.md`
+## Quality gates
+
+No unit or UX tests are authored (per project constitution). Quality is enforced by:
+
+```bash
+npm run build   # TypeScript strict compilation — catches type errors
+npm run lint    # ESLint + Prettier
+```
+
+Run both before committing.

@@ -9,11 +9,19 @@ import type { MomoClient } from './momo/momo-client';
 import { MOMO_CLIENT } from './momo/momo-client';
 import type { ActorContext } from '../../auth/session.guard';
 import { IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CollectPaymentDto {
+  @ApiProperty({ example: 'order_01abc' })
   @IsString() orderId!: string;
+
+  @ApiProperty({ example: '+256700000000', description: 'Mobile money number to charge' })
   @IsString() phoneNumber!: string;
+
+  @ApiProperty({ example: 15000, description: 'Amount in UGX' })
   @IsNumber() @Min(1) amount!: number;
+
+  @ApiPropertyOptional({ example: 'Payment for order #1042' })
   @IsString() @IsOptional() description?: string;
 }
 

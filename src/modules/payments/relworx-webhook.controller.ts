@@ -7,11 +7,13 @@ import {
   Logger,
   Post,
 } from '@nestjs/common';
+import { ApiExcludeController } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { createHmac } from 'node:crypto';
 import { PaymentsService } from './payments.service';
 import { Public } from '../../auth/session.guard';
 
+@ApiExcludeController()
 @Public()
 @Controller('webhooks/relworx')
 export class RelworxWebhookController {

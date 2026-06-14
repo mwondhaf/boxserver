@@ -15,14 +15,21 @@ import {
 } from '../../db/schema/subscriptions';
 import type { ActorContext } from '../../auth/session.guard';
 import { IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class SubscribeDto {
+  @ApiProperty({ example: 'plan_01abc', description: 'Subscription plan ID' })
   @IsString() planId!: string;
+
+  @ApiPropertyOptional({ example: 'addr_01abc', description: 'Delivery address ID for recurring deliveries' })
   @IsString() @IsOptional() customerAddressId?: string;
+
+  @ApiPropertyOptional({ example: 'slot_01abc', description: 'Preferred delivery time slot ID' })
   @IsString() @IsOptional() slotId?: string;
 }
 
 export class CancelSubscriptionDto {
+  @ApiPropertyOptional({ example: 'No longer needed' })
   @IsString() @IsOptional() reason?: string;
 }
 
