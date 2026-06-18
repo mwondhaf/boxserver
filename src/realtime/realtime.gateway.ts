@@ -16,8 +16,13 @@ import { getAuth } from '../auth/better-auth';
 import { EventBus } from './event-bus';
 import type { AppConfig } from '../common/config/app.config';
 
+// Mirror the HTTP CORS policy (main.ts): when credentials are sent the browser
+// rejects a wildcard `*` origin, so reflect the configured allowed origins (or
+// any origin in dev when unset) and echo them back per-request.
+const allowedOrigins = process.env['ALLOWED_ORIGINS']?.split(',') ?? true;
+
 @WebSocketGateway({
-  cors: { origin: '*', credentials: true },
+  cors: { origin: allowedOrigins, credentials: true },
   namespace: '/',
 })
 export class RealtimeGateway

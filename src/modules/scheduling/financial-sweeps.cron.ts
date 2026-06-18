@@ -21,9 +21,10 @@ export class FinancialSweepsCron {
 
   @Cron(CronExpression.EVERY_5_MINUTES)
   async retryQuarantinedSplits(): Promise<void> {
-    const quarantined = await this.db.query.boxWalletOrderConfirmations.findMany({
-      where: eq(boxWalletOrderConfirmations.boxWalletStatus, 'quarantined'),
-    });
+    const quarantined =
+      await this.db.query.boxWalletOrderConfirmations.findMany({
+        where: eq(boxWalletOrderConfirmations.boxWalletStatus, 'quarantined'),
+      });
 
     for (const conf of quarantined) {
       try {
@@ -45,7 +46,10 @@ export class FinancialSweepsCron {
 
     for (const order of pending) {
       try {
-        await this.refund.reverseOrderSplit(order.id, 'Auto-retry refund sweep');
+        await this.refund.reverseOrderSplit(
+          order.id,
+          'Auto-retry refund sweep',
+        );
       } catch (err) {
         this.log.error(`Failed to retry refund for order ${order.id}`, err);
       }

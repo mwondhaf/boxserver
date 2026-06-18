@@ -23,7 +23,10 @@ const TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   refunded: [],
 };
 
-export function assertValidTransition(from: OrderStatus, to: OrderStatus): void {
+export function assertValidTransition(
+  from: OrderStatus,
+  to: OrderStatus,
+): void {
   const allowed = TRANSITIONS[from];
   if (!allowed?.includes(to)) {
     throw new ConflictException(

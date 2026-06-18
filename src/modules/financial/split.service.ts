@@ -46,7 +46,10 @@ export class SplitService {
     if (!org) throw new Error(`Organization ${order.organizationId} not found`);
 
     // Resolve wallets
-    const vendorWalletId = await this.wallets.getOrCreateVendorWallet(org.id, org.name);
+    const vendorWalletId = await this.wallets.getOrCreateVendorWallet(
+      org.id,
+      org.name,
+    );
     const platformWalletId = await this.wallets.getPlatformWalletId();
 
     // Resolve rider wallet if applicable
@@ -59,7 +62,10 @@ export class SplitService {
         columns: { id: true, name: true },
       });
       if (rider) {
-        riderWalletId = await this.wallets.getOrCreateRiderWallet(rider.id, rider.name);
+        riderWalletId = await this.wallets.getOrCreateRiderWallet(
+          rider.id,
+          rider.name,
+        );
         riderAmount = order.deliveryTotal ?? 0;
       }
     }
@@ -71,7 +77,8 @@ export class SplitService {
 
     // Simplified split: vendor gets subtotal - markup, platform gets markup + service fee
     const vendorAmount = (order.subtotal ?? 0) - (order.markupTotal ?? 0);
-    const platformAmount = (order.markupTotal ?? 0) + (order.serviceFeeTotal ?? 0);
+    const platformAmount =
+      (order.markupTotal ?? 0) + (order.serviceFeeTotal ?? 0);
 
     const result = await this.ledger.confirmSplit({
       correlationId,

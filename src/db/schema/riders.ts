@@ -159,9 +159,7 @@ export const stages = pgTable('stages', {
   lat: numeric('lat', { precision: 10, scale: 7 }),
   lng: numeric('lng', { precision: 10, scale: 7 }),
   geohash: text('geohash'),
-  zoneId: varchar('zone_id', { length: 36 }).references(
-    () => deliveryZones.id,
-  ),
+  zoneId: varchar('zone_id', { length: 36 }).references(() => deliveryZones.id),
   capacity: integer('capacity'),
   isActive: boolean('is_active').notNull().default(true),
   contactName: text('contact_name'),
@@ -180,7 +178,9 @@ export const riderStageMemberships = pgTable('rider_stage_memberships', {
     .references(() => stages.id, { onDelete: 'cascade' }),
   isActive: boolean('is_active').notNull().default(true),
   isPrimary: boolean('is_primary').notNull().default(false),
-  joinedAt: timestamp('joined_at', { withTimezone: true }).notNull().defaultNow(),
+  joinedAt: timestamp('joined_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
   leftAt: timestamp('left_at', { withTimezone: true }),
   assignedBy: varchar('assigned_by', { length: 36 }),
 });

@@ -34,7 +34,9 @@ services:
     build:
       context: .
       target: deps
-    command: npm run start:dev
+    # Entrypoint regenerates + applies migrations, then runs the dev server.
+    entrypoint: ["sh", "/app/docker-entrypoint.sh"]
+    command: ["npm", "run", "start:dev"]
     restart: unless-stopped
     ports:
       - "3000:3000"
@@ -44,6 +46,9 @@ services:
       DATABASE_URL: postgres://boxserver:boxserver@db:5432/boxserver
       REDIS_URL: redis://redis:6379
       NODE_ENV: development
+      # Dev convenience: regenerate migrations from schema changes on each boot.
+      # Review the generated drizzle/00XX_*.sql before committing.
+      DB_AUTO_GENERATE: "true"
     volumes:
       - .:/app
       - /app/node_modules
@@ -51,6 +56,30 @@ services:
       db:
         condition: service_healthy
       redis:
+        condition: service_healthy
+
+  # Drizzle Studio. Profile-gated so it never starts with a plain `up`.
+  # Launch with: docker compose -f docker-compose.dev.yml --profile studio up studio
+  # Then open https://local.drizzle.studio (connects to localhost:4983).
+  studio:
+    build:
+      context: .
+      target: deps
+    profiles: ["studio"]
+    command: ["npx", "drizzle-kit", "studio", "--host", "0.0.0.0", "--port", "4983"]
+    restart: unless-stopped
+    ports:
+      - "4983:4983"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgres://boxserver:boxserver@db:5432/boxserver
+      NODE_ENV: development
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      db:
         condition: service_healthy
 
 volumes:

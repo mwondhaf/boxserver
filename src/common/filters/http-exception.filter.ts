@@ -38,16 +38,18 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const message =
       typeof exceptionResponse === 'string'
         ? exceptionResponse
-        : (exceptionResponse as { message?: string | string[] }).message ??
-          'An error occurred';
+        : ((exceptionResponse as { message?: string | string[] }).message ??
+          'An error occurred');
 
     const error =
       typeof exceptionResponse === 'string'
         ? exceptionResponse
-        : (exceptionResponse as { error?: string }).error ?? 'Error';
+        : ((exceptionResponse as { error?: string }).error ?? 'Error');
 
     if (status >= 500) {
-      this.logger.error(exception instanceof Error ? exception.stack : String(exception));
+      this.logger.error(
+        exception instanceof Error ? exception.stack : String(exception),
+      );
     }
 
     const body: ApiErrorResponse = {

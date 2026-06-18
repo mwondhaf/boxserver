@@ -10,11 +10,7 @@ import {
   organizationCustomers,
   customerAddresses,
 } from './schema/identity';
-import {
-  categories,
-  categoryPricingRules,
-  brands,
-} from './schema/categories';
+import { categories, categoryPricingRules, brands } from './schema/categories';
 import {
   products,
   productImages,
@@ -90,7 +86,10 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   memberships: many(members),
   customerAddresses: many(customerAddresses),
   organizationCustomers: many(organizationCustomers),
-  riderProfile: one(riders, { fields: [users.id], references: [riders.userId] }),
+  riderProfile: one(riders, {
+    fields: [users.id],
+    references: [riders.userId],
+  }),
   riderLocation: one(riderLocations, {
     fields: [users.id],
     references: [riderLocations.userId],
@@ -227,6 +226,27 @@ export const productImagesRelations = relations(productImages, ({ one }) => ({
     references: [products.id],
   }),
 }));
+
+export const productTagsRelations = relations(productTags, ({ one }) => ({
+  product: one(products, {
+    fields: [productTags.productId],
+    references: [products.id],
+  }),
+}));
+
+export const productCategoriesRelations = relations(
+  productCategories,
+  ({ one }) => ({
+    product: one(products, {
+      fields: [productCategories.productId],
+      references: [products.id],
+    }),
+    category: one(categories, {
+      fields: [productCategories.categoryId],
+      references: [categories.id],
+    }),
+  }),
+);
 
 export const productVariantsRelations = relations(
   productVariants,
@@ -367,6 +387,30 @@ export const orderItemsRelations = relations(orderItems, ({ one, many }) => ({
   order: one(orders, { fields: [orderItems.orderId], references: [orders.id] }),
   modifiers: many(orderItemModifiers),
 }));
+
+export const orderItemModifiersRelations = relations(
+  orderItemModifiers,
+  ({ one }) => ({
+    orderItem: one(orderItems, {
+      fields: [orderItemModifiers.orderItemId],
+      references: [orderItems.id],
+    }),
+  }),
+);
+
+export const orderItemEventsRelations = relations(
+  orderItemEvents,
+  ({ one }) => ({
+    order: one(orders, {
+      fields: [orderItemEvents.orderId],
+      references: [orders.id],
+    }),
+    orderItem: one(orderItems, {
+      fields: [orderItemEvents.orderItemId],
+      references: [orderItems.id],
+    }),
+  }),
+);
 
 export const orderEventsRelations = relations(orderEvents, ({ one }) => ({
   order: one(orders, {

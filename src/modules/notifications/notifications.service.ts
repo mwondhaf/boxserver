@@ -63,14 +63,18 @@ export class NotificationsService implements OnModuleInit {
     await this.db
       .update(notifications)
       .set({ readAt: new Date() })
-      .where(and(eq(notifications.userId, userId), isNull(notifications.readAt)));
+      .where(
+        and(eq(notifications.userId, userId), isNull(notifications.readAt)),
+      );
   }
 
   async unreadCount(userId: string): Promise<number> {
     const rows = await this.db
       .select({ id: notifications.id })
       .from(notifications)
-      .where(and(eq(notifications.userId, userId), isNull(notifications.readAt)));
+      .where(
+        and(eq(notifications.userId, userId), isNull(notifications.readAt)),
+      );
     return rows.length;
   }
 }

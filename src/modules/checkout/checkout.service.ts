@@ -74,14 +74,17 @@ export class CheckoutService {
     const cart = await this.getCartWithItems(dto.cartId);
     const org = await this.getOrg(cart.organizationId);
     const lines = await this.resolveLines(cart, s.markupEnabled);
-    const deliveryFee = await this.resolveDeliveryFee(dto as QuoteDto, org);
+    const deliveryFee = await this.resolveDeliveryFee(dto, org);
 
     const breakdown = this.pricing.compute({ lines, deliveryFee, settings: s });
 
     const displayId = await this.counters.nextValue('orders');
 
     const isGuest = !actor.userId;
-    const vendorPickupCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const vendorPickupCode = Math.random()
+      .toString(36)
+      .substring(2, 8)
+      .toUpperCase();
 
     // Atomic: decrement stock + insert order
     const [order] = await this.db.transaction(async (tx) => {
@@ -89,7 +92,9 @@ export class CheckoutService {
       for (const line of lines) {
         await tx
           .update(productVariants)
-          .set({ stockQuantity: sql`${productVariants.stockQuantity} - ${line.quantity}` })
+          .set({
+            stockQuantity: sql`${productVariants.stockQuantity} - ${line.quantity}`,
+          })
           .where(
             and(
               eq(productVariants.id, line.variantId),
@@ -104,8 +109,10 @@ export class CheckoutService {
         .values({
           displayId,
           organizationId: cart.organizationId,
-          fulfillmentType: dto.fulfillmentType as typeof orders.$inferInsert['fulfillmentType'],
-          paymentMethod: dto.paymentMethod as typeof orders.$inferInsert['paymentMethod'],
+          fulfillmentType:
+            dto.fulfillmentType as (typeof orders.$inferInsert)['fulfillmentType'],
+          paymentMethod:
+            dto.paymentMethod as (typeof orders.$inferInsert)['paymentMethod'],
           userId: actor.userId || null,
           isGuest,
           guestName: dto.guestName,
@@ -122,7 +129,8 @@ export class CheckoutService {
           deliveryQuoteId: dto.deliveryQuoteId,
           vendorPickupCode,
           status: 'pending',
-          paymentStatus: dto.paymentMethod === 'cash_on_delivery' ? 'awaiting' : 'awaiting',
+          paymentStatus:
+            dto.paymentMethod === 'cash_on_delivery' ? 'awaiting' : 'awaiting',
         })
         .returning();
 
@@ -173,7 +181,10 @@ export class CheckoutService {
       await this.quoteService.useQuote(dto.deliveryQuoteId).catch(() => null);
     }
 
-    this.eventBus.emit('order.created', { orderId: order.id, organizationId: cart.organizationId });
+    this.eventBus.emit('order.created', {
+      orderId: order.id,
+      organizationId: cart.organizationId,
+    });
 
     return order;
   }
@@ -207,13 +218,31 @@ export class CheckoutService {
     });
     if (!org) throw new NotFoundException('Organization not found');
     if (!org.isActive || org.isBusy) {
-      throw new ConflictException(org.isBusy ? 'Vendor is busy' : 'Vendor is inactive');
+      throw new ConflictException(
+        org.isBusy ? 'Vendor is busy' : 'Vendor is inactive',
+      );
     }
     return org;
   }
 
   private async resolveLines(
-    cart: { items: Array<{ variantId: string; quantity: number; variant: { id: string; product?: { id?: string; name?: string } | null; priceSet: { amounts: Array<{ amount: number; saleAmount?: number | null }> } | null } | null; modifiers: Array<{ option: { name: string; priceAdd: number } | null; quantity: number }> }> },
+    cart: {
+      items: Array<{
+        variantId: string;
+        quantity: number;
+        variant: {
+          id: string;
+          product?: { id?: string; name?: string } | null;
+          priceSet: {
+            amounts: Array<{ amount: number; saleAmount?: number | null }>;
+          } | null;
+        } | null;
+        modifiers: Array<{
+          option: { name: string; priceAdd: number } | null;
+          quantity: number;
+        }>;
+      }>;
+    },
     markupEnabled: boolean,
   ) {
     return cart.items.map((item) => {
@@ -268,7 +297,12 @@ export class CheckoutService {
 
   private gatePaymentMethod(
     method: string,
-    s: { cashOnDeliveryEnabled: boolean; mobileMoneyCodEnabled: boolean; cardEnabled: boolean; walletEnabled: boolean },
+    s: {
+      cashOnDeliveryEnabled: boolean;
+      mobileMoneyCodEnabled: boolean;
+      cardEnabled: boolean;
+      walletEnabled: boolean;
+    },
   ): void {
     if (method === 'cash_on_delivery' && !s.cashOnDeliveryEnabled) {
       throw new BadRequestException('Cash on delivery is not available');

@@ -40,6 +40,7 @@ services:
     environment:
       DATABASE_URL: postgres://boxserver:boxserver@db:5432/boxserver
       REDIS_URL: redis://redis:6379
+    # The entrypoint applies Drizzle migrations before starting the server.
     depends_on:
       db:
         condition: service_healthy

@@ -19,9 +19,10 @@ export class RefundService {
   async reverseOrderSplit(orderId: string, reason: string): Promise<void> {
     const correlationId = `order-split-${orderId}`;
 
-    const confirmation = await this.db.query.boxWalletOrderConfirmations.findFirst({
-      where: eq(boxWalletOrderConfirmations.correlationId, correlationId),
-    });
+    const confirmation =
+      await this.db.query.boxWalletOrderConfirmations.findFirst({
+        where: eq(boxWalletOrderConfirmations.correlationId, correlationId),
+      });
 
     if (!confirmation || confirmation.boxWalletStatus !== 'processed') {
       this.log.log(`No processed split for order ${orderId} — skipping refund`);

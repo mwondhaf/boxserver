@@ -55,7 +55,9 @@ export class OrderSwapService {
   async proposeSwap(orderId: string, actor: ActorContext, dto: ProposeSwapDto) {
     const item = await this.assertItem(orderId, dto.orderItemId);
     if (item.itemStatus !== 'unavailable') {
-      throw new BadRequestException('Item must be marked unavailable before proposing swap');
+      throw new BadRequestException(
+        'Item must be marked unavailable before proposing swap',
+      );
     }
 
     const variant = await this.db.query.productVariants.findFirst({

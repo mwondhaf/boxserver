@@ -8,6 +8,27 @@
       "when": 1781434361531,
       "tag": "0000_damp_the_fallen",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1781553600000,
+      "tag": "0001_add_ban_columns",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1781640000000,
+      "tag": "0002_add_vendor_contact_payout_fields",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1781523068910,
+      "tag": "0003_glossy_sasquatch",
+      "breakpoints": true
     }
   ]
 }

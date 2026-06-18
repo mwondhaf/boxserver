@@ -101,7 +101,9 @@ export const subscriptions = pgTable('subscriptions', {
   customerAddressId: varchar('customer_address_id', { length: 36 }).references(
     () => customerAddresses.id,
   ),
-  status: subscriptionStatusEnum('status').notNull().default('awaiting_payment'),
+  status: subscriptionStatusEnum('status')
+    .notNull()
+    .default('awaiting_payment'),
 
   // Snapshots
   planName: text('plan_name').notNull(),

@@ -1,15 +1,27 @@
 import 'reflect-metadata';
+import 'dotenv/config';
 import { assertEnv } from './common/config/env';
 assertEnv();
 
+import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
+import { Pool } from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { NestFactory } from '@nestjs/core';
+import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import type { Request, Response, NextFunction } from 'express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { apiReference } from '@scalar/nestjs-api-reference';
 
-function securityHeaders(req: Request, res: Response, next: NextFunction): void {
+function securityHeaders(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-XSS-Protection', '1; mode=block');
@@ -25,10 +37,65 @@ function securityHeaders(req: Request, res: Response, next: NextFunction): void 
   next();
 }
 
+async function runMigrations(): Promise<void> {
+  const migrationsFolder = path.join(process.cwd(), 'drizzle');
+  const pool = new Pool({ connectionString: process.env['DATABASE_URL']! });
+
+  // If the DB was bootstrapped via `db:push` (or a prior partial run) the
+  // baseline schema already exists but the Drizzle migration-tracking table is
+  // missing or empty. Detect this and seed the baseline migration row so
+  // migrate() only runs genuinely new SQL files instead of replaying 0000.
+  const { rows } = await pool.query<{ db_exists: boolean }>(`
+    SELECT EXISTS (
+      SELECT 1 FROM information_schema.tables
+      WHERE table_schema = 'public' AND table_name = 'users'
+    ) AS db_exists
+  `);
+
+  const baselineWhen = 1781434361531;
+
+  if (rows[0]?.db_exists) {
+    const sql0 = fs.readFileSync(
+      path.join(migrationsFolder, '0000_damp_the_fallen.sql'),
+      'utf8',
+    );
+    const hash0 = crypto.createHash('sha256').update(sql0).digest('hex');
+
+    await pool.query(`
+      CREATE SCHEMA IF NOT EXISTS drizzle;
+      CREATE TABLE IF NOT EXISTS drizzle.__drizzle_migrations (
+        id SERIAL PRIMARY KEY,
+        hash text NOT NULL,
+        created_at bigint
+      );
+    `);
+
+    // Idempotent: only record the baseline if no migration at or after the
+    // baseline timestamp is already tracked (covers an empty tracking table).
+    await pool.query(
+      `INSERT INTO drizzle.__drizzle_migrations (hash, created_at)
+       SELECT $1, $2
+       WHERE NOT EXISTS (
+         SELECT 1 FROM drizzle.__drizzle_migrations WHERE created_at >= $2
+       )`,
+      [hash0, baselineWhen],
+    );
+  }
+
+  const db = drizzle(pool);
+  await migrate(db, { migrationsFolder });
+  await pool.end();
+}
+
 async function bootstrap(): Promise<void> {
+  await runMigrations();
+
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     rawBody: true,
+    bufferLogs: true,
   });
+
+  app.useLogger(app.get(Logger));
 
   app.set('trust proxy', 1);
 
@@ -47,10 +114,10 @@ async function bootstrap(): Promise<void> {
     .setTitle('BoxServer API')
     .setDescription(
       `BoxConv marketplace platform — multi-vendor food & grocery delivery.\n\n` +
-      `**Authentication:** All protected endpoints require a session cookie set by Better Auth. ` +
-      `Sign in via \`POST /api/auth/sign-in/email\` with \`{ email, password }\` — the session cookie is set automatically.\n\n` +
-      `**Roles:** \`customer\` · \`vendor\` (requires active organisation) · \`rider\` · \`admin\`\n\n` +
-      `**Money:** All amounts are integer UGX (no decimals). 1000 = UGX 1,000.`,
+        `**Authentication:** All protected endpoints require a session cookie set by Better Auth. ` +
+        `Sign in via \`POST /api/auth/sign-in/email\` with \`{ email, password }\` — the session cookie is set automatically.\n\n` +
+        `**Roles:** \`customer\` · \`vendor\` (requires active organisation) · \`rider\` · \`admin\`\n\n` +
+        `**Money:** All amounts are integer UGX (no decimals). 1000 = UGX 1,000.`,
     )
     .setVersion('1.0')
     .addCookieAuth('session')
@@ -66,9 +133,13 @@ async function bootstrap(): Promise<void> {
     }),
   );
 
+  const logger = app.get(Logger);
   const port = Number(process.env['PORT'] ?? 3000);
   await app.listen(port);
-  console.log(`BoxServer running on :${port}`);
+  logger.log(`BoxServer running on :${port}`);
 }
 
-bootstrap().catch(console.error);
+bootstrap().catch((err) => {
+  process.stderr.write(`Fatal bootstrap error: ${String(err)}\n`);
+  process.exit(1);
+});

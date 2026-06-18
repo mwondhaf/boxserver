@@ -31,7 +31,10 @@ export class RecommendationsCron {
         LIMIT 20
       `);
 
-      const rows = topVariants.rows as Array<{ variant_id: string; order_count: string }>;
+      const rows = topVariants.rows as Array<{
+        variant_id: string;
+        order_count: string;
+      }>;
       const variantIds = rows.map((r) => r.variant_id);
       const scores = rows.map((r) => r.order_count);
 
@@ -53,7 +56,9 @@ export class RecommendationsCron {
           },
         });
 
-      this.log.log(`Recommendations recomputed for hour ${hour}: ${variantIds.length} variants`);
+      this.log.log(
+        `Recommendations recomputed for hour ${hour}: ${variantIds.length} variants`,
+      );
     } catch (err) {
       this.log.error('Recommendations recompute failed', err);
     }

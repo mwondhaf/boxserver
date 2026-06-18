@@ -11,22 +11,51 @@ const QUOTE_TTL_MINUTES = 15;
 
 export class CreateQuoteDto {
   @ApiProperty({ example: 0.3136, description: 'Pickup latitude (-90 to 90)' })
-  @IsNumber() @Min(-90) @Max(90) pickupLat!: number;
+  @IsNumber()
+  @Min(-90)
+  @Max(90)
+  pickupLat!: number;
 
-  @ApiProperty({ example: 32.5811, description: 'Pickup longitude (-180 to 180)' })
-  @IsNumber() @Min(-180) @Max(180) pickupLng!: number;
+  @ApiProperty({
+    example: 32.5811,
+    description: 'Pickup longitude (-180 to 180)',
+  })
+  @IsNumber()
+  @Min(-180)
+  @Max(180)
+  pickupLng!: number;
 
-  @ApiProperty({ example: 0.3560, description: 'Drop-off latitude (-90 to 90)' })
-  @IsNumber() @Min(-90) @Max(90) dropoffLat!: number;
+  @ApiProperty({ example: 0.356, description: 'Drop-off latitude (-90 to 90)' })
+  @IsNumber()
+  @Min(-90)
+  @Max(90)
+  dropoffLat!: number;
 
-  @ApiProperty({ example: 32.5960, description: 'Drop-off longitude (-180 to 180)' })
-  @IsNumber() @Min(-180) @Max(180) dropoffLng!: number;
+  @ApiProperty({
+    example: 32.596,
+    description: 'Drop-off longitude (-180 to 180)',
+  })
+  @IsNumber()
+  @Min(-180)
+  @Max(180)
+  dropoffLng!: number;
 
-  @ApiPropertyOptional({ example: 'small', description: 'small | medium | large | extra_large' })
-  @IsString() @IsOptional() sizeCategory?: string;
+  @ApiPropertyOptional({
+    example: 'small',
+    description: 'small | medium | large | extra_large',
+  })
+  @IsString()
+  @IsOptional()
+  sizeCategory?: string;
 
-  @ApiPropertyOptional({ example: 1000, description: 'Fixed package/handling fee in UGX to add on top of the fare' })
-  @IsNumber() @IsOptional() @Min(0) packageFee?: number;
+  @ApiPropertyOptional({
+    example: 1000,
+    description: 'Fixed package/handling fee in UGX to add on top of the fare',
+  })
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  packageFee?: number;
 }
 
 @Injectable()

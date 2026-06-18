@@ -29,7 +29,10 @@ export function applyMultiplier(amount: number, multiplier: number): number {
   return ugx(Math.round(amount * multiplier));
 }
 
-export function capAmount(amount: number, cap: number | null | undefined): number {
+export function capAmount(
+  amount: number,
+  cap: number | null | undefined,
+): number {
   if (cap == null) return amount;
   return Math.min(amount, cap);
 }

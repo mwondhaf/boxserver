@@ -56,8 +56,24 @@ export class OrdersService {
     });
   }
 
+  async listAllOrders(status?: string) {
+    const condition = status
+      ? eq(orders.status, status as OrderStatus)
+      : undefined;
+    return this.db.query.orders.findMany({
+      where: condition,
+      orderBy: [desc(orders.createdAt)],
+      limit: 200,
+      with: {
+        items: true,
+        organization: { columns: { id: true, name: true, slug: true } },
+      },
+    });
+  }
+
   async listVendorOrders(actor: ActorContext, status?: string) {
-    if (!actor.activeOrgId) throw new BadRequestException('No active organization');
+    if (!actor.activeOrgId)
+      throw new BadRequestException('No active organization');
     const condition = status
       ? and(
           eq(orders.organizationId, actor.activeOrgId),
@@ -92,7 +108,9 @@ export class OrdersService {
   }
 
   async markReady(id: string, actor: ActorContext) {
-    return this.transition(id, actor, 'ready_for_pickup', { actorRole: 'vendor' });
+    return this.transition(id, actor, 'ready_for_pickup', {
+      actorRole: 'vendor',
+    });
   }
 
   async verifyPickupCode(id: string, actor: ActorContext, dto: PickupCodeDto) {
@@ -108,9 +126,12 @@ export class OrdersService {
       where: eq(orders.id, id),
     });
     if (!order) throw new NotFoundException('Order not found');
-    if (order.userId !== actor.userId) throw new ForbiddenException('Not your order');
+    if (order.userId !== actor.userId)
+      throw new ForbiddenException('Not your order');
     if (!canCancel(order.status)) {
-      throw new BadRequestException(`Cannot cancel order in status '${order.status}'`);
+      throw new BadRequestException(
+        `Cannot cancel order in status '${order.status}'`,
+      );
     }
     return this.transition(id, actor, 'cancelled', {
       actorRole: 'customer',
@@ -140,12 +161,16 @@ export class OrdersService {
     assertValidTransition(order.status, to);
 
     await this.db.transaction(async (tx) => {
-      await tx.update(orders).set({ status: to, updatedAt: new Date() }).where(eq(orders.id, id));
+      await tx
+        .update(orders)
+        .set({ status: to, updatedAt: new Date() })
+        .where(eq(orders.id, id));
       await tx.insert(orderEvents).values({
         orderId: id,
         actorUserId: actor.userId || null,
         actorName: actor.name || null,
-        actorRole: meta.actorRole as typeof orderEvents.$inferInsert['actorRole'],
+        actorRole:
+          meta.actorRole as (typeof orderEvents.$inferInsert)['actorRole'],
         eventType: `order.${to}`,
         fromStatus: order.status,
         toStatus: to,

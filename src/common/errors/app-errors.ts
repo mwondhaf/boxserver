@@ -25,34 +25,65 @@ export const ErrorCodes = {
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];
 
-function withCode(message: string, code: ErrorCode): { message: string; code: ErrorCode } {
+function withCode(
+  message: string,
+  code: ErrorCode,
+): { message: string; code: ErrorCode } {
   return { message, code };
 }
 
 export const AppErrors = {
   vendorClosed: () =>
-    new BadRequestException(withCode('This vendor is currently closed or not accepting orders', ErrorCodes.VENDOR_CLOSED)),
+    new BadRequestException(
+      withCode(
+        'This vendor is currently closed or not accepting orders',
+        ErrorCodes.VENDOR_CLOSED,
+      ),
+    ),
 
   outOfZone: () =>
-    new BadRequestException(withCode('Delivery address is outside our service zone', ErrorCodes.OUT_OF_ZONE)),
+    new BadRequestException(
+      withCode(
+        'Delivery address is outside our service zone',
+        ErrorCodes.OUT_OF_ZONE,
+      ),
+    ),
 
   minOrderNotMet: (minAmount: number) =>
     new UnprocessableEntityException(
-      withCode(`Minimum order amount is UGX ${minAmount.toLocaleString()}`, ErrorCodes.MIN_ORDER_NOT_MET),
+      withCode(
+        `Minimum order amount is UGX ${minAmount.toLocaleString()}`,
+        ErrorCodes.MIN_ORDER_NOT_MET,
+      ),
     ),
 
   quoteExpired: () =>
-    new BadRequestException(withCode('Delivery quote has expired — please request a new one', ErrorCodes.QUOTE_EXPIRED)),
+    new BadRequestException(
+      withCode(
+        'Delivery quote has expired — please request a new one',
+        ErrorCodes.QUOTE_EXPIRED,
+      ),
+    ),
 
   quoteAlreadyUsed: () =>
-    new ConflictException(withCode('Delivery quote has already been used', ErrorCodes.QUOTE_ALREADY_USED)),
+    new ConflictException(
+      withCode(
+        'Delivery quote has already been used',
+        ErrorCodes.QUOTE_ALREADY_USED,
+      ),
+    ),
 
   overLimit: (resource: string) =>
-    new BadRequestException(withCode(`${resource} limit exceeded`, ErrorCodes.OVER_LIMIT)),
+    new BadRequestException(
+      withCode(`${resource} limit exceeded`, ErrorCodes.OVER_LIMIT),
+    ),
 
   itemUnavailable: (itemName: string) =>
     new UnprocessableEntityException(
-      withCode(`Item "${itemName}" is no longer available`, ErrorCodes.ITEM_UNAVAILABLE),
+      withCode(
+        `Item "${itemName}" is no longer available`,
+        ErrorCodes.ITEM_UNAVAILABLE,
+      ),
     ),
 
   insufficientStock: (itemName: string, available: number) =>
@@ -64,27 +95,50 @@ export const AppErrors = {
     ),
 
   promoExpired: () =>
-    new BadRequestException(withCode('This promotion has expired', ErrorCodes.PROMO_EXPIRED)),
+    new BadRequestException(
+      withCode('This promotion has expired', ErrorCodes.PROMO_EXPIRED),
+    ),
 
   promoUsageLimit: () =>
-    new BadRequestException(withCode('This promotion has reached its usage limit', ErrorCodes.PROMO_USAGE_LIMIT)),
+    new BadRequestException(
+      withCode(
+        'This promotion has reached its usage limit',
+        ErrorCodes.PROMO_USAGE_LIMIT,
+      ),
+    ),
 
   promoCustomerLimit: () =>
     new BadRequestException(
-      withCode('You have already used this promotion the maximum number of times', ErrorCodes.PROMO_CUSTOMER_LIMIT),
+      withCode(
+        'You have already used this promotion the maximum number of times',
+        ErrorCodes.PROMO_CUSTOMER_LIMIT,
+      ),
     ),
 
   invalidPaymentMethod: (method: string) =>
     new BadRequestException(
-      withCode(`Payment method "${method}" is not available`, ErrorCodes.INVALID_PAYMENT_METHOD),
+      withCode(
+        `Payment method "${method}" is not available`,
+        ErrorCodes.INVALID_PAYMENT_METHOD,
+      ),
     ),
 
   orderNotCancellable: () =>
-    new ConflictException(withCode('Order cannot be cancelled at this stage', ErrorCodes.ORDER_NOT_CANCELLABLE)),
+    new ConflictException(
+      withCode(
+        'Order cannot be cancelled at this stage',
+        ErrorCodes.ORDER_NOT_CANCELLABLE,
+      ),
+    ),
 
   notFound: (resource: string) =>
     new NotFoundException(`${resource} not found`),
 
   riderNotAvailable: () =>
-    new BadRequestException(withCode('No available riders at this time', ErrorCodes.RIDER_NOT_AVAILABLE)),
+    new BadRequestException(
+      withCode(
+        'No available riders at this time',
+        ErrorCodes.RIDER_NOT_AVAILABLE,
+      ),
+    ),
 };

@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   ForbiddenException,
   Inject,
   Injectable,
@@ -11,9 +12,11 @@ import {
   organizations,
   members,
   invitations,
+  users,
 } from '../../db/schema/identity';
 import type { ActorContext } from '../../auth/session.guard';
 import type {
+  AddMemberDto,
   CreateOrganizationDto,
   UpdateOrganizationDto,
   UpdatePayoutDto,
@@ -55,13 +58,19 @@ export class OrganizationsService {
     const orgId = this.requireActiveOrg(actor);
     this.requireOrgRole(actor, ['owner', 'admin']);
 
+    const { minimumOrderAmount, selfDeliveryFee, selfDeliveryRadius, ...rest } =
+      dto;
+
     const [updated] = await this.db
       .update(organizations)
       .set({
-        ...dto,
-        minimumOrderAmount: dto.minimumOrderAmount != null
-          ? String(dto.minimumOrderAmount)
-          : undefined,
+        ...rest,
+        minimumOrderAmount:
+          minimumOrderAmount != null ? String(minimumOrderAmount) : undefined,
+        selfDeliveryFee:
+          selfDeliveryFee != null ? String(selfDeliveryFee) : undefined,
+        selfDeliveryRadius:
+          selfDeliveryRadius != null ? String(selfDeliveryRadius) : undefined,
       })
       .where(eq(organizations.id, orgId))
       .returning();
@@ -77,7 +86,7 @@ export class OrganizationsService {
       .update(organizations)
       .set({
         ...dto,
-        payoutMethod: dto.payoutMethod as 'mobile_money' | 'bank',
+        payoutMethod: dto.payoutMethod,
       })
       .where(eq(organizations.id, orgId))
       .returning();
@@ -89,9 +98,7 @@ export class OrganizationsService {
     const orgId = this.requireActiveOrg(actor);
     this.requireOrgRole(actor, ['owner']);
 
-    await this.db
-      .delete(organizations)
-      .where(eq(organizations.id, orgId));
+    await this.db.delete(organizations).where(eq(organizations.id, orgId));
 
     return { deleted: orgId };
   }
@@ -101,8 +108,50 @@ export class OrganizationsService {
 
     return this.db.query.members.findMany({
       where: eq(members.organizationId, orgId),
-      with: { user: { columns: { id: true, name: true, email: true, phone: true } } },
+      with: {
+        user: { columns: { id: true, name: true, email: true, phone: true } },
+      },
     });
+  }
+
+  async addMember(actor: ActorContext, dto: AddMemberDto) {
+    const orgId = this.requireActiveOrg(actor);
+    this.requireOrgRole(actor, ['owner', 'admin']);
+
+    const user = await this.db.query.users.findFirst({
+      where: eq(users.email, dto.email),
+      columns: { id: true, name: true, email: true },
+    });
+    if (!user)
+      throw new NotFoundException(`No user found with email ${dto.email}`);
+
+    const existing = await this.db.query.members.findFirst({
+      where: and(
+        eq(members.organizationId, orgId),
+        eq(members.userId, user.id),
+      ),
+      columns: { id: true },
+    });
+    if (existing)
+      throw new ConflictException('User is already a member of this vendor');
+
+    const [member] = await this.db
+      .insert(members)
+      .values({
+        id: crypto.randomUUID(),
+        organizationId: orgId,
+        userId: user.id,
+        role: dto.role,
+      })
+      .returning({
+        id: members.id,
+        role: members.role,
+        organizationId: members.organizationId,
+        userId: members.userId,
+        createdAt: members.createdAt,
+      });
+
+    return { ...member, user };
   }
 
   async updateMemberRole(
@@ -163,9 +212,7 @@ export class OrganizationsService {
     roles: Array<'owner' | 'admin' | 'member'>,
   ): void {
     if (!actor.orgRole || !roles.includes(actor.orgRole)) {
-      throw new ForbiddenException(
-        `Required org role: ${roles.join(' or ')}`,
-      );
+      throw new ForbiddenException(`Required org role: ${roles.join(' or ')}`);
     }
   }
 }

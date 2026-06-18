@@ -7,57 +7,78 @@ import {
   Post,
   Put,
 } from '@nestjs/common';
-import {
-  IsInt,
-  IsNumber,
-  IsOptional,
-  IsString,
-} from 'class-validator';
+import { IsInt, IsNumber, IsOptional, IsString } from 'class-validator';
 import { Inject } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
-import { ApiCookieAuth, ApiOperation, ApiParam, ApiProperty, ApiPropertyOptional, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiCookieAuth,
+  ApiOperation,
+  ApiParam,
+  ApiProperty,
+  ApiPropertyOptional,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { DB_TOKEN } from '../../db/drizzle.module';
 import type { Db } from '../../db/client';
 import { deliveryZones, pricingRules } from '../../db/schema/zones';
 import { QuoteService, CreateQuoteDto } from './quote.service';
 import { Public } from '../../auth/session.guard';
-import { RequireRole } from '../../auth/ability/policies.guard';
+import { RequireRole } from '../../auth/casl/policies.guard';
 
 class CreateZoneDto {
   @ApiProperty({ example: 'Kampala Central' })
-  @IsString() name!: string;
+  @IsString()
+  name!: string;
 
   @ApiProperty({ example: 'Kampala' })
-  @IsString() city!: string;
+  @IsString()
+  city!: string;
 
   @ApiProperty({ example: 0.3136, description: 'Zone center latitude' })
-  @IsNumber() centerLat!: number;
+  @IsNumber()
+  centerLat!: number;
 
   @ApiProperty({ example: 32.5811, description: 'Zone center longitude' })
-  @IsNumber() centerLng!: number;
+  @IsNumber()
+  centerLng!: number;
 
-  @ApiProperty({ example: 5000, description: 'Maximum service radius in meters' })
-  @IsInt() maxDistanceMeters!: number;
+  @ApiProperty({
+    example: 5000,
+    description: 'Maximum service radius in meters',
+  })
+  @IsInt()
+  maxDistanceMeters!: number;
 
-  @ApiPropertyOptional({ example: '#FF6B6B', description: 'Hex color for map display' })
-  @IsString() @IsOptional() color?: string;
+  @ApiPropertyOptional({
+    example: '#FF6B6B',
+    description: 'Hex color for map display',
+  })
+  @IsString()
+  @IsOptional()
+  color?: string;
 }
 
 class CreatePricingRuleDto {
   @ApiProperty({ example: 'zone_01abc' })
-  @IsString() zoneId!: string;
+  @IsString()
+  zoneId!: string;
 
   @ApiProperty({ example: 'Standard' })
-  @IsString() name!: string;
+  @IsString()
+  name!: string;
 
   @ApiProperty({ example: 2000, description: 'Base delivery fee in UGX' })
-  @IsInt() baseFee!: number;
+  @IsInt()
+  baseFee!: number;
 
   @ApiProperty({ example: 500, description: 'Additional fee per km in UGX' })
-  @IsInt() ratePerKm!: number;
+  @IsInt()
+  ratePerKm!: number;
 
   @ApiProperty({ example: 1500, description: 'Minimum delivery fee in UGX' })
-  @IsInt() minFee!: number;
+  @IsInt()
+  minFee!: number;
 }
 
 @ApiTags('Delivery Quotes (Public)')
@@ -67,8 +88,15 @@ export class QuotesController {
   constructor(private readonly quotes: QuoteService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Get a delivery quote', description: 'Calculates the delivery fee between two coordinates. Returns a quote valid for 15 minutes. Pass the returned ID to checkout.' })
-  @ApiResponse({ status: 201, description: 'Quote with fare breakdown and TTL' })
+  @ApiOperation({
+    summary: 'Get a delivery quote',
+    description:
+      'Calculates the delivery fee between two coordinates. Returns a quote valid for 15 minutes. Pass the returned ID to checkout.',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Quote with fare breakdown and TTL',
+  })
   create(@Body() dto: CreateQuoteDto) {
     return this.quotes.createQuote(dto);
   }
@@ -88,13 +116,17 @@ export class QuotesController {
 @RequireRole('admin')
 @Controller('a/zones')
 export class AdminZonesController {
-  constructor(
-    @Inject(DB_TOKEN) private readonly db: Db,
-  ) {}
+  constructor(@Inject(DB_TOKEN) private readonly db: Db) {}
 
   @Get()
-  @ApiOperation({ summary: 'List delivery zones', description: 'Returns all zones with their associated pricing rules.' })
-  @ApiResponse({ status: 200, description: 'Array of zones with pricing rules' })
+  @ApiOperation({
+    summary: 'List delivery zones',
+    description: 'Returns all zones with their associated pricing rules.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Array of zones with pricing rules',
+  })
   list() {
     return this.db.query.deliveryZones.findMany({
       with: { pricingRules: true },
@@ -102,7 +134,11 @@ export class AdminZonesController {
   }
 
   @Post()
-  @ApiOperation({ summary: 'Create a delivery zone', description: 'Defines a circular delivery area around a center point. Vendors within the zone can receive platform deliveries.' })
+  @ApiOperation({
+    summary: 'Create a delivery zone',
+    description:
+      'Defines a circular delivery area around a center point. Vendors within the zone can receive platform deliveries.',
+  })
   @ApiResponse({ status: 201, description: 'Created zone' })
   async create(@Body() dto: CreateZoneDto) {
     const [zone] = await this.db
@@ -121,7 +157,11 @@ export class AdminZonesController {
   }
 
   @Post('rules')
-  @ApiOperation({ summary: 'Create a pricing rule for a zone', description: 'Defines how delivery fees are calculated within a zone: baseFee + (distanceKm × ratePerKm), with a minFee floor.' })
+  @ApiOperation({
+    summary: 'Create a pricing rule for a zone',
+    description:
+      'Defines how delivery fees are calculated within a zone: baseFee + (distanceKm × ratePerKm), with a minFee floor.',
+  })
   @ApiResponse({ status: 201, description: 'Created pricing rule' })
   async createRule(@Body() dto: CreatePricingRuleDto) {
     const [rule] = await this.db
@@ -138,13 +178,14 @@ export class AdminZonesController {
   }
 
   @Put(':id/suspend')
-  @ApiOperation({ summary: 'Suspend a zone', description: 'Disables deliveries within the zone. Orders can no longer be placed for vendors in this zone.' })
+  @ApiOperation({
+    summary: 'Suspend a zone',
+    description:
+      'Disables deliveries within the zone. Orders can no longer be placed for vendors in this zone.',
+  })
   @ApiParam({ name: 'id', example: 'zone_01abc' })
   @ApiResponse({ status: 200, description: 'Zone suspended' })
-  async suspend(
-    @Param('id') id: string,
-    @Body() body: { reason?: string },
-  ) {
+  async suspend(@Param('id') id: string, @Body() body: { reason?: string }) {
     const [zone] = await this.db
       .update(deliveryZones)
       .set({ suspendedAt: new Date(), suspendedReason: body.reason })
@@ -154,7 +195,10 @@ export class AdminZonesController {
   }
 
   @Delete(':id/suspend')
-  @ApiOperation({ summary: 'Unsuspend a zone', description: 'Re-enables deliveries within a previously suspended zone.' })
+  @ApiOperation({
+    summary: 'Unsuspend a zone',
+    description: 'Re-enables deliveries within a previously suspended zone.',
+  })
   @ApiParam({ name: 'id', example: 'zone_01abc' })
   @ApiResponse({ status: 200, description: 'Zone reactivated' })
   async unsuspend(@Param('id') id: string) {

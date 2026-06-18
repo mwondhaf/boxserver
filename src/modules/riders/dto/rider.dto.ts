@@ -8,6 +8,7 @@ import {
   Min,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsUgandanPhone } from '../../../common/validation/ugandan-phone.validator';
 
 export enum VehicleType {
   Walking = 'walking',
@@ -30,7 +31,7 @@ export class ApplyRiderDto {
   name!: string;
 
   @ApiProperty({ example: '+256700000000' })
-  @IsString()
+  @IsUgandanPhone()
   phoneNumber!: string;
 
   @ApiProperty({ enum: VehicleType, example: VehicleType.Motorbike })
@@ -58,11 +59,14 @@ export class ApplyRiderDto {
   payoutMethod?: string;
 
   @ApiPropertyOptional({ example: '+256700000000' })
-  @IsString()
+  @IsUgandanPhone()
   @IsOptional()
   payoutMobileNumber?: string;
 
-  @ApiPropertyOptional({ enum: EmploymentType, example: EmploymentType.Freelance })
+  @ApiPropertyOptional({
+    enum: EmploymentType,
+    example: EmploymentType.Freelance,
+  })
   @IsEnum(EmploymentType)
   @IsOptional()
   employmentType?: EmploymentType;
@@ -75,7 +79,10 @@ export class UpdateLocationDto {
   @Max(90)
   lat!: number;
 
-  @ApiProperty({ example: 32.5811, description: 'Current longitude (-180 to 180)' })
+  @ApiProperty({
+    example: 32.5811,
+    description: 'Current longitude (-180 to 180)',
+  })
   @IsNumber()
   @Min(-180)
   @Max(180)
@@ -89,23 +96,35 @@ export class SetStatusDto {
 }
 
 export class AdminApproveDto {
-  @ApiPropertyOptional({ example: true, description: 'true = approve, false = suspend' })
+  @ApiPropertyOptional({
+    example: true,
+    description: 'true = approve, false = suspend',
+  })
   @IsBoolean()
   @IsOptional()
   approve?: boolean;
 
-  @ApiPropertyOptional({ example: 'Fraudulent activity detected', description: 'Required when approve is false' })
+  @ApiPropertyOptional({
+    example: 'Fraudulent activity detected',
+    description: 'Required when approve is false',
+  })
   @IsString()
   @IsOptional()
   suspensionReason?: string;
 }
 
 export class AssignStageDto {
-  @ApiProperty({ example: 'stage_01abc', description: 'Delivery stage / zone ID' })
+  @ApiProperty({
+    example: 'stage_01abc',
+    description: 'Delivery stage / zone ID',
+  })
   @IsString()
   stageId!: string;
 
-  @ApiPropertyOptional({ example: true, description: 'Set this as the rider\'s primary stage' })
+  @ApiPropertyOptional({
+    example: true,
+    description: "Set this as the rider's primary stage",
+  })
   @IsBoolean()
   @IsOptional()
   isPrimary?: boolean;
@@ -116,7 +135,10 @@ export class RateRiderDto {
   @IsString()
   orderId!: string;
 
-  @ApiProperty({ example: 5, description: 'Rating from 1 (poor) to 5 (excellent)' })
+  @ApiProperty({
+    example: 5,
+    description: 'Rating from 1 (poor) to 5 (excellent)',
+  })
   @IsNumber()
   @Min(1)
   @Max(5)
@@ -129,7 +151,10 @@ export class RateRiderDto {
 }
 
 export class ReportIncidentDto {
-  @ApiProperty({ example: 'order', description: 'Type of delivery: order or parcel' })
+  @ApiProperty({
+    example: 'order',
+    description: 'Type of delivery: order or parcel',
+  })
   @IsString()
   deliveryKind!: string;
 

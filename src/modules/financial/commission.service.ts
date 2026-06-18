@@ -26,7 +26,10 @@ export class CommissionService {
       columns: { commissionRuleId: true },
     });
     if (org?.commissionRuleId) {
-      return { commissionRuleId: org.commissionRuleId, source: 'vendor_override' };
+      return {
+        commissionRuleId: org.commissionRuleId,
+        source: 'vendor_override',
+      };
     }
 
     // 2. Zone mapping

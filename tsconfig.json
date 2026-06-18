@@ -23,5 +23,6 @@
     "strictBindCallApply": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true
-  }
+  },
+  "exclude": ["auth-schema.reference.ts"]
 }

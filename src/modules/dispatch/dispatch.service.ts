@@ -140,7 +140,11 @@ export class DispatchService {
     return { success: true };
   }
 
-  async confirmDelivery(orderId: string, actor: ActorContext, proofR2Key?: string) {
+  async confirmDelivery(
+    orderId: string,
+    actor: ActorContext,
+    proofR2Key?: string,
+  ) {
     const order = await this.db.query.orders.findFirst({
       where: eq(orders.id, orderId),
     });

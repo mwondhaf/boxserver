@@ -15,7 +15,8 @@ export class BoxWalletLedgerClient implements LedgerClient {
   private readonly apiKey: string;
 
   constructor(private readonly config: ConfigService) {
-    this.baseUrl = config.get<string>('app.boxwalletApiUrl') ?? 'https://api.boxwallet.ug';
+    this.baseUrl =
+      config.get<string>('app.boxwalletApiUrl') ?? 'https://api.boxwallet.ug';
     this.apiKey = config.get<string>('app.boxwalletApiKey') ?? '';
   }
 
@@ -31,7 +32,10 @@ export class BoxWalletLedgerClient implements LedgerClient {
     });
 
     if (res.status === 409) {
-      return { boxWalletOrderId: payload.correlationId, status: 'already_synced' };
+      return {
+        boxWalletOrderId: payload.correlationId,
+        status: 'already_synced',
+      };
     }
 
     if (!res.ok) {

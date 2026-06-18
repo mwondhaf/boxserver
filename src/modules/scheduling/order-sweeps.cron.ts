@@ -26,10 +26,7 @@ export class OrderSweepsCron {
     );
 
     const stale = await this.db.query.orders.findMany({
-      where: and(
-        eq(orders.status, 'pending'),
-        lt(orders.createdAt, cutoff),
-      ),
+      where: and(eq(orders.status, 'pending'), lt(orders.createdAt, cutoff)),
       with: { items: true },
     });
 

@@ -50,21 +50,24 @@ export class SubscriptionCycleCron {
         await this.runCycle(sub, now);
       } catch (err) {
         this.log.error(`Subscription cycle failed for ${sub.id}`, err);
-        await this.db
-          .insert(subscriptionCycles)
-          .values({
-            subscriptionId: sub.id,
-            cycleNumber: sub.totalCycles - sub.cyclesRemaining + 1,
-            scheduledFor: now,
-            status: 'failed',
-            failureReason: String(err),
-          });
+        await this.db.insert(subscriptionCycles).values({
+          subscriptionId: sub.id,
+          cycleNumber: sub.totalCycles - sub.cyclesRemaining + 1,
+          scheduledFor: now,
+          status: 'failed',
+          failureReason: String(err),
+        });
       }
     }
   }
 
   private async runCycle(sub: typeof subscriptions.$inferSelect, now: Date) {
-    const items = sub.itemsSnapshot ? (JSON.parse(sub.itemsSnapshot) as Array<{ variantId: string; quantity: number }>) : [];
+    const items = sub.itemsSnapshot
+      ? (JSON.parse(sub.itemsSnapshot) as Array<{
+          variantId: string;
+          quantity: number;
+        }>)
+      : [];
 
     const displayId = await this.counters.nextValue('orders');
     const cycleNumber = sub.totalCycles - sub.cyclesRemaining + 1;
@@ -116,13 +119,16 @@ export class SubscriptionCycleCron {
         const nextStatus = remaining <= 0 ? 'completed' : 'active';
         const nextRunAt = remaining > 0 ? this.nextRun(now, sub.planId) : null;
 
-        await tx.update(subscriptions).set({
-          cyclesRemaining: remaining,
-          status: nextStatus as typeof subscriptions.$inferInsert['status'],
-          lastRunAt: now,
-          nextRunAt,
-          updatedAt: now,
-        }).where(eq(subscriptions.id, sub.id));
+        await tx
+          .update(subscriptions)
+          .set({
+            cyclesRemaining: remaining,
+            status: nextStatus,
+            lastRunAt: now,
+            nextRunAt,
+            updatedAt: now,
+          })
+          .where(eq(subscriptions.id, sub.id));
 
         this.eventBus.emit('subscription.cycle_fulfilled', {
           subscriptionId: sub.id,

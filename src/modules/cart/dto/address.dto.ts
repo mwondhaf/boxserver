@@ -7,6 +7,7 @@ import {
   Min,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsUgandanPhone } from '../../../common/validation/ugandan-phone.validator';
 
 export class CreateAddressDto {
   @ApiProperty({ example: 'Home', description: 'Label for this address' })
@@ -14,7 +15,7 @@ export class CreateAddressDto {
   name!: string;
 
   @ApiPropertyOptional({ example: '+256700000000' })
-  @IsString()
+  @IsUgandanPhone()
   @IsOptional()
   phone?: string;
 
@@ -55,7 +56,10 @@ export class CreateAddressDto {
   @IsOptional()
   lat?: number;
 
-  @ApiPropertyOptional({ example: 32.6011, description: 'Longitude (-180 to 180)' })
+  @ApiPropertyOptional({
+    example: 32.6011,
+    description: 'Longitude (-180 to 180)',
+  })
   @IsNumber()
   @Min(-180)
   @Max(180)
@@ -67,7 +71,10 @@ export class CreateAddressDto {
   @IsOptional()
   directions?: string;
 
-  @ApiPropertyOptional({ example: false, description: 'Set as the default delivery address' })
+  @ApiPropertyOptional({
+    example: false,
+    description: 'Set as the default delivery address',
+  })
   @IsBoolean()
   @IsOptional()
   isDefault?: boolean;

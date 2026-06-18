@@ -14,7 +14,8 @@ export class RelworxMomoClient implements MomoClient {
   private readonly apiKey: string;
 
   constructor(private readonly config: ConfigService) {
-    this.baseUrl = config.get<string>('app.relworxApiUrl') ?? 'https://api.relworx.com';
+    this.baseUrl =
+      config.get<string>('app.relworxApiUrl') ?? 'https://api.relworx.com';
     this.apiKey = config.get<string>('app.relworxApiKey') ?? '';
   }
 
@@ -48,9 +49,12 @@ export class RelworxMomoClient implements MomoClient {
   }
 
   async getStatus(providerReference: string): Promise<StatusResult> {
-    const res = await fetch(`${this.baseUrl}/v1/payments/${providerReference}`, {
-      headers: { Authorization: `Bearer ${this.apiKey}` },
-    });
+    const res = await fetch(
+      `${this.baseUrl}/v1/payments/${providerReference}`,
+      {
+        headers: { Authorization: `Bearer ${this.apiKey}` },
+      },
+    );
 
     if (!res.ok) {
       return { providerReference, status: 'failed' };

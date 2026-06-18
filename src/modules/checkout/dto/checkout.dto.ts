@@ -1,10 +1,6 @@
-import {
-  IsEnum,
-  IsOptional,
-  IsString,
-  IsNumber,
-} from 'class-validator';
+import { IsEnum, IsOptional, IsString, IsNumber } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsUgandanPhone } from '../../../common/validation/ugandan-phone.validator';
 
 export enum FulfillmentType {
   Delivery = 'delivery',
@@ -20,7 +16,10 @@ export enum PaymentMethod {
 }
 
 export class QuoteDto {
-  @ApiProperty({ example: 'cart_01abc', description: 'Cart ID from POST /api/cart/org/:orgId' })
+  @ApiProperty({
+    example: 'cart_01abc',
+    description: 'Cart ID from POST /api/cart/org/:orgId',
+  })
   @IsString()
   cartId!: string;
 
@@ -28,27 +27,43 @@ export class QuoteDto {
   @IsEnum(FulfillmentType)
   fulfillmentType!: FulfillmentType;
 
-  @ApiPropertyOptional({ example: 'addr_01abc', description: 'Saved customer address ID (used when customerAddress is known)' })
+  @ApiPropertyOptional({
+    example: 'addr_01abc',
+    description:
+      'Saved customer address ID (used when customerAddress is known)',
+  })
   @IsString()
   @IsOptional()
   customerAddressId?: string;
 
-  @ApiPropertyOptional({ example: 'quote_01abc', description: 'Pre-computed delivery quote ID from POST /api/quotes' })
+  @ApiPropertyOptional({
+    example: 'quote_01abc',
+    description: 'Pre-computed delivery quote ID from POST /api/quotes',
+  })
   @IsString()
   @IsOptional()
   deliveryQuoteId?: string;
 
-  @ApiPropertyOptional({ example: 0.3136, description: 'Drop-off latitude (alternative to customerAddressId)' })
+  @ApiPropertyOptional({
+    example: 0.3136,
+    description: 'Drop-off latitude (alternative to customerAddressId)',
+  })
   @IsNumber()
   @IsOptional()
   deliveryLat?: number;
 
-  @ApiPropertyOptional({ example: 32.5811, description: 'Drop-off longitude (alternative to customerAddressId)' })
+  @ApiPropertyOptional({
+    example: 32.5811,
+    description: 'Drop-off longitude (alternative to customerAddressId)',
+  })
   @IsNumber()
   @IsOptional()
   deliveryLng?: number;
 
-  @ApiPropertyOptional({ example: 'WELCOME10', description: 'Promotion / discount code' })
+  @ApiPropertyOptional({
+    example: 'WELCOME10',
+    description: 'Promotion / discount code',
+  })
   @IsString()
   @IsOptional()
   promotionCode?: string;
@@ -87,13 +102,19 @@ export class PlaceOrderDto {
   @IsOptional()
   deliveryLng?: number;
 
-  @ApiPropertyOptional({ example: 'Jane Guest', description: 'Name for guest/unregistered checkout' })
+  @ApiPropertyOptional({
+    example: 'Jane Guest',
+    description: 'Name for guest/unregistered checkout',
+  })
   @IsString()
   @IsOptional()
   guestName?: string;
 
-  @ApiPropertyOptional({ example: '+256700000000', description: 'Phone for guest checkout' })
-  @IsString()
+  @ApiPropertyOptional({
+    example: '+256700000000',
+    description: 'Phone for guest checkout',
+  })
+  @IsUgandanPhone()
   @IsOptional()
   guestPhone?: string;
 
@@ -102,8 +123,12 @@ export class PlaceOrderDto {
   @IsOptional()
   promotionCode?: string;
 
-  @ApiPropertyOptional({ example: '+256700000000', description: 'Mobile money phone — required when paymentMethod is mobile_money' })
-  @IsString()
+  @ApiPropertyOptional({
+    example: '+256700000000',
+    description:
+      'Mobile money phone — required when paymentMethod is mobile_money',
+  })
+  @IsUgandanPhone()
   @IsOptional()
   mobileMoneyPhone?: string;
 }

@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Patch } from '@nestjs/common';
 import { PlatformSettingsService } from './platform-settings.service';
-import { RequireRole } from '../../auth/ability/policies.guard';
+import { RequireRole } from '../../auth/casl/policies.guard';
 import { Actor } from '../../auth/actor.decorator';
 import type { ActorContext } from '../../auth/session.guard';
 import { IsBoolean, IsInt, IsOptional, IsString, Min } from 'class-validator';

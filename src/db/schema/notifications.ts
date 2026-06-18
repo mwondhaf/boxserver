@@ -1,10 +1,4 @@
-import {
-  jsonb,
-  pgTable,
-  text,
-  timestamp,
-  varchar,
-} from 'drizzle-orm/pg-core';
+import { jsonb, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { users } from './identity';
 
 export const notifications = pgTable('notifications', {

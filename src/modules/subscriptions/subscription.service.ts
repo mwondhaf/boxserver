@@ -19,18 +19,31 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class SubscribeDto {
   @ApiProperty({ example: 'plan_01abc', description: 'Subscription plan ID' })
-  @IsString() planId!: string;
+  @IsString()
+  planId!: string;
 
-  @ApiPropertyOptional({ example: 'addr_01abc', description: 'Delivery address ID for recurring deliveries' })
-  @IsString() @IsOptional() customerAddressId?: string;
+  @ApiPropertyOptional({
+    example: 'addr_01abc',
+    description: 'Delivery address ID for recurring deliveries',
+  })
+  @IsString()
+  @IsOptional()
+  customerAddressId?: string;
 
-  @ApiPropertyOptional({ example: 'slot_01abc', description: 'Preferred delivery time slot ID' })
-  @IsString() @IsOptional() slotId?: string;
+  @ApiPropertyOptional({
+    example: 'slot_01abc',
+    description: 'Preferred delivery time slot ID',
+  })
+  @IsString()
+  @IsOptional()
+  slotId?: string;
 }
 
 export class CancelSubscriptionDto {
   @ApiPropertyOptional({ example: 'No longer needed' })
-  @IsString() @IsOptional() reason?: string;
+  @IsString()
+  @IsOptional()
+  reason?: string;
 }
 
 @Injectable()
@@ -84,13 +97,17 @@ export class SubscriptionService {
   async listMySubscriptions(actor: ActorContext) {
     return this.db.query.subscriptions.findMany({
       where: eq(subscriptions.customerUserId, actor.userId),
-      with: { plan: true, cycles: { orderBy: (t, { desc }) => [desc(t.createdAt)] } },
+      with: {
+        plan: true,
+        cycles: { orderBy: (t, { desc }) => [desc(t.createdAt)] },
+      },
     });
   }
 
   async pause(id: string, actor: ActorContext, until?: Date) {
     const sub = await this.assertOwner(id, actor.userId);
-    if (sub.status !== 'active') throw new BadRequestException('Only active subscriptions can be paused');
+    if (sub.status !== 'active')
+      throw new BadRequestException('Only active subscriptions can be paused');
 
     const pausedUntil = until ?? new Date(Date.now() + 7 * 24 * 3600_000);
     await this.db
@@ -103,7 +120,8 @@ export class SubscriptionService {
 
   async resume(id: string, actor: ActorContext) {
     const sub = await this.assertOwner(id, actor.userId);
-    if (sub.status !== 'paused') throw new BadRequestException('Subscription is not paused');
+    if (sub.status !== 'paused')
+      throw new BadRequestException('Subscription is not paused');
 
     await this.db
       .update(subscriptions)
@@ -150,14 +168,17 @@ export class SubscriptionService {
       where: eq(subscriptions.id, id),
     });
     if (!sub) throw new NotFoundException('Subscription not found');
-    if (sub.customerUserId !== userId) throw new ForbiddenException('Not your subscription');
+    if (sub.customerUserId !== userId)
+      throw new ForbiddenException('Not your subscription');
     return sub;
   }
 
   private computeNextRun(cadence: string): Date {
     const now = new Date();
-    if (cadence === 'weekly') return new Date(now.getTime() + 7 * 24 * 3600_000);
-    if (cadence === 'biweekly') return new Date(now.getTime() + 14 * 24 * 3600_000);
+    if (cadence === 'weekly')
+      return new Date(now.getTime() + 7 * 24 * 3600_000);
+    if (cadence === 'biweekly')
+      return new Date(now.getTime() + 14 * 24 * 3600_000);
     return new Date(now.getTime() + 30 * 24 * 3600_000);
   }
 }

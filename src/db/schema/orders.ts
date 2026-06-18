@@ -99,9 +99,9 @@ export const orders = pgTable(
     deliveryLng: numeric('delivery_lng', { precision: 10, scale: 7 }),
     deliveryPhone: text('delivery_phone'),
     deliveryDescription: text('delivery_description'),
-    customerAddressId: varchar('customer_address_id', { length: 36 }).references(
-      () => customerAddresses.id,
-    ),
+    customerAddressId: varchar('customer_address_id', {
+      length: 36,
+    }).references(() => customerAddresses.id),
 
     // Zone/quote refs
     deliveryZoneId: varchar('delivery_zone_id', { length: 36 }),

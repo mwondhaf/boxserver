@@ -46,7 +46,10 @@ export class AddCartItemDto {
 }
 
 export class UpdateCartItemDto {
-  @ApiProperty({ example: 3, description: 'New quantity. Set to 0 to remove the item.' })
+  @ApiProperty({
+    example: 3,
+    description: 'New quantity. Set to 0 to remove the item.',
+  })
   @IsInt()
   @Min(0)
   quantity!: number;

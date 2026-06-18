@@ -1,11 +1,13 @@
 import {
   IsBoolean,
+  IsEmail,
   IsEnum,
   IsNumber,
   IsOptional,
   IsString,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsUgandanPhone } from '../../../common/validation/ugandan-phone.validator';
 
 export enum VendorType {
   Grocery = 'grocery',
@@ -17,9 +19,13 @@ export class CreateOrganizationDto {
   @IsString()
   name!: string;
 
-  @ApiProperty({ example: 'kampala-fresh-market' })
+  @ApiPropertyOptional({
+    example: 'kampala-fresh-market',
+    description: 'Auto-generated from name if omitted.',
+  })
   @IsString()
-  slug!: string;
+  @IsOptional()
+  slug?: string;
 
   @ApiPropertyOptional({ enum: VendorType, example: VendorType.Grocery })
   @IsEnum(VendorType)
@@ -32,11 +38,14 @@ export class CreateOrganizationDto {
   email?: string;
 
   @ApiPropertyOptional({ example: '+256700000000' })
-  @IsString()
+  @IsUgandanPhone()
   @IsOptional()
   phone?: string;
 
-  @ApiPropertyOptional({ description: 'Tax identification number', example: '1234567890' })
+  @ApiPropertyOptional({
+    description: 'Tax identification number',
+    example: '1234567890',
+  })
   @IsString()
   @IsOptional()
   tin?: string;
@@ -47,9 +56,14 @@ export class CreateOrganizationDto {
   contactPerson?: string;
 
   @ApiPropertyOptional({ example: '+256700000001' })
-  @IsString()
+  @IsUgandanPhone()
   @IsOptional()
   contactPhone?: string;
+
+  @ApiPropertyOptional({ example: 'contact@example.com' })
+  @IsEmail()
+  @IsOptional()
+  contactPersonEmail?: string;
 
   @ApiPropertyOptional({ example: 'Kampala' })
   @IsString()
@@ -66,17 +80,26 @@ export class CreateOrganizationDto {
   @IsOptional()
   street?: string;
 
-  @ApiPropertyOptional({ example: 0.3136, description: 'Latitude of vendor location' })
+  @ApiPropertyOptional({
+    example: 0.3136,
+    description: 'Latitude of vendor location',
+  })
   @IsNumber()
   @IsOptional()
   lat?: number;
 
-  @ApiPropertyOptional({ example: 32.5811, description: 'Longitude of vendor location' })
+  @ApiPropertyOptional({
+    example: 32.5811,
+    description: 'Longitude of vendor location',
+  })
   @IsNumber()
   @IsOptional()
   lng?: number;
 
-  @ApiPropertyOptional({ example: 'cat_01abc', description: 'Category ID from /admin/catalog/categories' })
+  @ApiPropertyOptional({
+    example: 'cat_01abc',
+    description: 'Category ID from /admin/catalog/categories',
+  })
   @IsString()
   @IsOptional()
   categoryId?: string;
@@ -94,16 +117,57 @@ export class UpdateOrganizationDto {
   email?: string;
 
   @ApiPropertyOptional({ example: '+256700000000' })
-  @IsString()
+  @IsUgandanPhone()
   @IsOptional()
   phone?: string;
 
-  @ApiPropertyOptional({ example: false, description: 'Mark the store temporarily unavailable' })
+  @ApiPropertyOptional({ example: '1234567890' })
+  @IsString()
+  @IsOptional()
+  tin?: string;
+
+  @ApiPropertyOptional({ example: 'John Doe' })
+  @IsString()
+  @IsOptional()
+  contactPerson?: string;
+
+  @ApiPropertyOptional({ example: '+256700000001' })
+  @IsUgandanPhone()
+  @IsOptional()
+  contactPhone?: string;
+
+  @ApiPropertyOptional({ example: 'contact@example.com' })
+  @IsEmail()
+  @IsOptional()
+  contactPersonEmail?: string;
+
+  @ApiPropertyOptional({ example: 'Kampala' })
+  @IsString()
+  @IsOptional()
+  cityOrDistrict?: string;
+
+  @ApiPropertyOptional({ example: 'Nakawa' })
+  @IsString()
+  @IsOptional()
+  town?: string;
+
+  @ApiPropertyOptional({ example: 'Plot 12 Jinja Road' })
+  @IsString()
+  @IsOptional()
+  street?: string;
+
+  @ApiPropertyOptional({
+    example: false,
+    description: 'Mark the store temporarily unavailable',
+  })
   @IsBoolean()
   @IsOptional()
   isBusy?: boolean;
 
-  @ApiPropertyOptional({ example: true, description: 'Whether the store appears in the storefront' })
+  @ApiPropertyOptional({
+    example: true,
+    description: 'Whether the store appears in the storefront',
+  })
   @IsBoolean()
   @IsOptional()
   isActive?: boolean;
@@ -123,7 +187,10 @@ export class UpdateOrganizationDto {
   @IsOptional()
   selfPickupEnabled?: boolean;
 
-  @ApiPropertyOptional({ example: 5000, description: 'Minimum order amount in UGX' })
+  @ApiPropertyOptional({
+    example: 5000,
+    description: 'Minimum order amount in UGX',
+  })
   @IsNumber()
   @IsOptional()
   minimumOrderAmount?: number;
@@ -137,6 +204,22 @@ export class UpdateOrganizationDto {
   @IsString()
   @IsOptional()
   estimatedPrepTime?: string;
+
+  @ApiPropertyOptional({
+    example: 5000,
+    description: 'Self-delivery fee in UGX',
+  })
+  @IsNumber()
+  @IsOptional()
+  selfDeliveryFee?: number;
+
+  @ApiPropertyOptional({
+    example: 5.5,
+    description: 'Self-delivery radius in km',
+  })
+  @IsNumber()
+  @IsOptional()
+  selfDeliveryRadius?: number;
 }
 
 export class UpdatePayoutDto {
@@ -144,10 +227,23 @@ export class UpdatePayoutDto {
   @IsEnum(['mobile_money', 'bank'])
   payoutMethod!: 'mobile_money' | 'bank';
 
-  @ApiPropertyOptional({ example: '+256700000000' })
+  @ApiPropertyOptional({ example: 'MTN', description: 'MTN, Airtel, etc.' })
   @IsString()
   @IsOptional()
+  mobileMoneyProvider?: string;
+
+  @ApiPropertyOptional({ example: '+256700000000' })
+  @IsUgandanPhone()
+  @IsOptional()
   payoutMobileNumber?: string;
+
+  @ApiPropertyOptional({
+    example: 'John Doe',
+    description: 'Mobile money account holder name',
+  })
+  @IsString()
+  @IsOptional()
+  mobileMoneyName?: string;
 
   @ApiPropertyOptional({ example: 'Stanbic Bank' })
   @IsString()
@@ -159,24 +255,38 @@ export class UpdatePayoutDto {
   @IsOptional()
   payoutBankAccount?: string;
 
+  @ApiPropertyOptional({
+    example: 'John Doe',
+    description: 'Bank account holder name',
+  })
+  @IsString()
+  @IsOptional()
+  bankAccountName?: string;
+
   @ApiPropertyOptional({ example: 'Kampala Road' })
   @IsString()
   @IsOptional()
   payoutBankBranch?: string;
 }
 
-export class InviteMemberDto {
-  @ApiProperty({ example: 'staff@example.com' })
-  @IsString()
+export const VENDOR_MEMBER_ROLES = ['owner', 'admin', 'member'] as const;
+export type VendorMemberRole = (typeof VENDOR_MEMBER_ROLES)[number];
+
+export class AddMemberDto {
+  @ApiProperty({
+    example: 'staff@example.com',
+    description: 'Email of an existing platform user',
+  })
+  @IsEmail()
   email!: string;
 
-  @ApiProperty({ enum: ['admin', 'member'], example: 'member' })
-  @IsEnum(['admin', 'member'])
-  role!: 'admin' | 'member';
+  @ApiProperty({ enum: VENDOR_MEMBER_ROLES, example: 'member' })
+  @IsEnum(VENDOR_MEMBER_ROLES)
+  role!: VendorMemberRole;
 }
 
 export class UpdateMemberRoleDto {
-  @ApiProperty({ enum: ['admin', 'member'], example: 'admin' })
-  @IsEnum(['admin', 'member'])
-  role!: 'admin' | 'member';
+  @ApiProperty({ enum: VENDOR_MEMBER_ROLES, example: 'admin' })
+  @IsEnum(VENDOR_MEMBER_ROLES)
+  role!: VendorMemberRole;
 }

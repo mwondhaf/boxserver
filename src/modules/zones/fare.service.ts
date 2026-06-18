@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { Inject } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import { DB_TOKEN } from '../../db/drizzle.module';
@@ -52,7 +56,9 @@ export class FareService {
     }
 
     if (!matchedZone) {
-      throw new BadRequestException('Delivery location is outside all active zones');
+      throw new BadRequestException(
+        'Delivery location is outside all active zones',
+      );
     }
 
     if (matchedZone.suspendedAt) {
@@ -66,20 +72,29 @@ export class FareService {
     const nowHour = now.getHours();
     const nowDay = now.getDay().toString();
 
-    const rule = matchedZone.pricingRules.find((r) => {
-      const dayMatch = !r.daysOfWeek || r.daysOfWeek.includes(nowDay);
-      const hourMatch =
-        r.startHour === null ||
-        r.endHour === null ||
-        (r.startHour !== null && r.endHour !== null && nowHour >= r.startHour && nowHour < r.endHour);
-      return dayMatch && hourMatch;
-    }) ?? matchedZone.pricingRules[0];
+    const rule =
+      matchedZone.pricingRules.find((r) => {
+        const dayMatch = !r.daysOfWeek || r.daysOfWeek.includes(nowDay);
+        const hourMatch =
+          r.startHour === null ||
+          r.endHour === null ||
+          (r.startHour !== null &&
+            r.endHour !== null &&
+            nowHour >= r.startHour &&
+            nowHour < r.endHour);
+        return dayMatch && hourMatch;
+      }) ?? matchedZone.pricingRules[0];
 
     if (!rule) {
       throw new BadRequestException('No pricing rule available for this zone');
     }
 
-    const distanceMeters = haversineMeters(pickupLat, pickupLng, dropoffLat, dropoffLng);
+    const distanceMeters = haversineMeters(
+      pickupLat,
+      pickupLng,
+      dropoffLat,
+      dropoffLng,
+    );
     const distanceKm = distanceMeters / 1000;
     const surgeMultiplier = Number(rule.surgeMultiplier);
     const distanceFee = Math.round(rule.ratePerKm * distanceKm);

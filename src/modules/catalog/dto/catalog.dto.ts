@@ -17,10 +17,6 @@ export class CreateProductDto {
   @IsString()
   name!: string;
 
-  @ApiProperty({ example: 'organic-matooke' })
-  @IsString()
-  slug!: string;
-
   @ApiPropertyOptional({ example: 'Fresh organic matooke from Mbarara farms' })
   @IsString()
   @IsOptional()
@@ -35,6 +31,17 @@ export class CreateProductDto {
   @IsString()
   @IsOptional()
   categoryId?: string;
+
+  @ApiPropertyOptional({ example: true })
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
+
+  @ApiPropertyOptional({ example: ['organic', 'fresh'] })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  tags?: string[];
 }
 
 export class UpdateProductDto {
@@ -73,10 +80,21 @@ export class CreateVariantDto {
   @IsOptional()
   weightGrams?: number;
 
-  @ApiProperty({ example: 50, description: 'Available stock quantity (0 = out of stock)' })
+  @ApiProperty({
+    example: 50,
+    description: 'Available stock quantity (0 = out of stock)',
+  })
   @IsInt()
   @Min(0)
   stockQuantity!: number;
+
+  @ApiPropertyOptional({
+    example: true,
+    description: 'Whether customers can purchase this listing',
+  })
+  @IsBoolean()
+  @IsOptional()
+  isAvailable?: boolean;
 }
 
 export class UpdateVariantDto {
@@ -95,15 +113,31 @@ export class UpdateVariantDto {
   @IsString()
   @IsOptional()
   unit?: string;
+
+  @ApiPropertyOptional({ example: 'SKU-001' })
+  @IsString()
+  @IsOptional()
+  sku?: string;
+
+  @ApiPropertyOptional({ example: 1000, description: 'Weight in grams' })
+  @IsInt()
+  @IsOptional()
+  weightGrams?: number;
 }
 
-export class CreatePriceDto {
-  @ApiProperty({ example: 3500, description: 'Price in UGX (integer, no decimals)' })
+export class PriceTierDto {
+  @ApiProperty({
+    example: 3500,
+    description: 'Price in UGX (integer, no decimals)',
+  })
   @IsInt()
   @Min(0)
   amount!: number;
 
-  @ApiPropertyOptional({ example: 3000, description: 'Sale/discounted price in UGX' })
+  @ApiPropertyOptional({
+    example: 3000,
+    description: 'Sale/discounted price in UGX',
+  })
   @IsInt()
   @IsOptional()
   @Min(0)
@@ -113,6 +147,36 @@ export class CreatePriceDto {
   @IsString()
   @IsOptional()
   currency?: string;
+
+  @ApiPropertyOptional({
+    example: 1,
+    description: 'Minimum quantity this tier applies to (for tiered pricing)',
+  })
+  @IsInt()
+  @IsOptional()
+  @Min(0)
+  minQuantity?: number;
+
+  @ApiPropertyOptional({
+    example: 5,
+    description: 'Maximum quantity this tier applies to (for tiered pricing)',
+  })
+  @IsInt()
+  @IsOptional()
+  @Min(1)
+  maxQuantity?: number;
+}
+
+export class SetVariantPricesDto {
+  @ApiProperty({
+    type: [PriceTierDto],
+    description:
+      'Full set of price tiers for the variant. Replaces any existing prices. Provide a single tier for simple pricing.',
+  })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PriceTierDto)
+  prices!: PriceTierDto[];
 }
 
 export class CreateModifierGroupDto {
@@ -124,7 +188,10 @@ export class CreateModifierGroupDto {
   @IsString()
   name!: string;
 
-  @ApiProperty({ example: true, description: 'Whether customer must select at least one option' })
+  @ApiProperty({
+    example: true,
+    description: 'Whether customer must select at least one option',
+  })
   @IsBoolean()
   required!: boolean;
 
@@ -148,7 +215,10 @@ export class CreateModifierOptionDto {
   @IsString()
   name!: string;
 
-  @ApiProperty({ example: 500, description: 'Additional price in UGX (0 = free)' })
+  @ApiProperty({
+    example: 500,
+    description: 'Additional price in UGX (0 = free)',
+  })
   @IsInt()
   priceAdd!: number;
 
@@ -170,33 +240,51 @@ export class CreateCollectionDto {
 }
 
 export class StorefrontQueryDto {
-  @ApiPropertyOptional({ example: 'cat_01abc', description: 'Filter by category ID' })
+  @ApiPropertyOptional({
+    example: 'cat_01abc',
+    description: 'Filter by category ID',
+  })
   @IsString()
   @IsOptional()
   categoryId?: string;
 
-  @ApiPropertyOptional({ example: 'matooke', description: 'Search term for vendor/product name' })
+  @ApiPropertyOptional({
+    example: 'matooke',
+    description: 'Search term for vendor/product name',
+  })
   @IsString()
   @IsOptional()
   search?: string;
 
-  @ApiPropertyOptional({ example: 0.3136, description: 'Customer latitude for proximity sorting' })
+  @ApiPropertyOptional({
+    example: 0.3136,
+    description: 'Customer latitude for proximity sorting',
+  })
   @IsNumber()
   @IsOptional()
   lat?: number;
 
-  @ApiPropertyOptional({ example: 32.5811, description: 'Customer longitude for proximity sorting' })
+  @ApiPropertyOptional({
+    example: 32.5811,
+    description: 'Customer longitude for proximity sorting',
+  })
   @IsNumber()
   @IsOptional()
   lng?: number;
 
-  @ApiPropertyOptional({ example: 20, description: 'Maximum results to return' })
+  @ApiPropertyOptional({
+    example: 20,
+    description: 'Maximum results to return',
+  })
   @IsInt()
   @IsOptional()
   @Min(1)
   limit?: number;
 
-  @ApiPropertyOptional({ example: 'cursor_xyz', description: 'Pagination cursor from previous response' })
+  @ApiPropertyOptional({
+    example: 'cursor_xyz',
+    description: 'Pagination cursor from previous response',
+  })
   @IsString()
   @IsOptional()
   cursor?: string;

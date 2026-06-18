@@ -57,11 +57,16 @@ export class ReferralService {
       where: eq(referralCodes.code, code),
     });
     if (!refCode) throw new NotFoundException('Referral code not found');
-    if (!refCode.isActive) throw new BadRequestException('Referral code is inactive');
-    if (refCode.userId === actor.userId) throw new BadRequestException('Cannot use your own referral code');
+    if (!refCode.isActive)
+      throw new BadRequestException('Referral code is inactive');
+    if (refCode.userId === actor.userId)
+      throw new BadRequestException('Cannot use your own referral code');
 
     // Check capacity
-    if (refCode.maxReferrals && refCode.totalReferrals >= refCode.maxReferrals) {
+    if (
+      refCode.maxReferrals &&
+      refCode.totalReferrals >= refCode.maxReferrals
+    ) {
       throw new BadRequestException('Referral code capacity reached');
     }
 
@@ -72,7 +77,8 @@ export class ReferralService {
         eq(referrals.referralCodeId, refCode.id),
       ),
     });
-    if (existingReferral) throw new ConflictException('Already redeemed this referral code');
+    if (existingReferral)
+      throw new ConflictException('Already redeemed this referral code');
 
     const [referral] = await this.db
       .insert(referrals)

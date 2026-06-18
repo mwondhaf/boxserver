@@ -193,7 +193,8 @@ export async function seedCatalog(db: Db): Promise<void> {
     {
       name: 'Rolex',
       slug: 'rolex',
-      description: 'Ugandan street-food wrap — chapati rolled with egg, veggies',
+      description:
+        'Ugandan street-food wrap — chapati rolled with egg, veggies',
       orgId: FOOD_ORG_ID,
       variants: [
         { unit: 'single', stockQuantity: 100, price: 5000 },

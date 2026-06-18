@@ -2,7 +2,10 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { and, eq } from 'drizzle-orm';
 import { DB_TOKEN } from '../../db/drizzle.module';
 import type { Db } from '../../db/client';
-import { boxWalletMappings, boxWalletAutoCreateLog } from '../../db/schema/financial';
+import {
+  boxWalletMappings,
+  boxWalletAutoCreateLog,
+} from '../../db/schema/financial';
 import type { LedgerClient } from './ledger/ledger-client';
 import { LEDGER_CLIENT } from './ledger/ledger-client';
 
@@ -15,7 +18,10 @@ export class WalletService {
     @Inject(LEDGER_CLIENT) private readonly ledger: LedgerClient,
   ) {}
 
-  async getOrCreateVendorWallet(organizationId: string, orgName: string): Promise<string> {
+  async getOrCreateVendorWallet(
+    organizationId: string,
+    orgName: string,
+  ): Promise<string> {
     const existing = await this.db.query.boxWalletMappings.findFirst({
       where: and(
         eq(boxWalletMappings.entityType, 'vendor'),
@@ -27,7 +33,10 @@ export class WalletService {
     return this.createWallet('vendor', { organizationId }, orgName);
   }
 
-  async getOrCreateRiderWallet(riderId: string, riderName: string): Promise<string> {
+  async getOrCreateRiderWallet(
+    riderId: string,
+    riderName: string,
+  ): Promise<string> {
     const existing = await this.db.query.boxWalletMappings.findFirst({
       where: and(
         eq(boxWalletMappings.entityType, 'rider'),

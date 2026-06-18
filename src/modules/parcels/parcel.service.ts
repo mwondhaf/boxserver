@@ -31,14 +31,18 @@ export class ParcelService {
     if (dto.deliveryQuoteId) {
       const quote = await this.quotes.getQuote(dto.deliveryQuoteId);
       if (!quote) throw new BadRequestException('Quote not found');
-      if (quote.expiresAt < new Date()) throw new BadRequestException('Quote expired');
+      if (quote.expiresAt < new Date())
+        throw new BadRequestException('Quote expired');
       deliveryFee = quote.deliveryFee;
       totalFare = quote.totalFare ?? deliveryFee;
     }
 
     const displayId = await this.counters.nextValue('parcels');
     const pickupCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-    const dropoffCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const dropoffCode = Math.random()
+      .toString(36)
+      .substring(2, 8)
+      .toUpperCase();
 
     const [parcel] = await this.db
       .insert(parcels)
@@ -59,7 +63,8 @@ export class ParcelService {
         dropoffLng: String(dto.dropoffLng),
         dropoffGeohash: encodeGeohash(dto.dropoffLat, dto.dropoffLng, 7),
         dropoffNotes: dto.dropoffNotes ?? null,
-        sizeCategory: dto.sizeCategory as typeof parcels.$inferInsert['sizeCategory'],
+        sizeCategory:
+          dto.sizeCategory as (typeof parcels.$inferInsert)['sizeCategory'],
         description: dto.description ?? 'Parcel',
         valueAmount: dto.declaredValue !== undefined ? dto.declaredValue : null,
         quoteId: dto.deliveryQuoteId ?? null,
@@ -84,7 +89,10 @@ export class ParcelService {
       actorUserId: actor.userId,
     });
 
-    this.eventBus.emit('parcel.created', { parcelId: parcel.id, senderUserId: actor.userId });
+    this.eventBus.emit('parcel.created', {
+      parcelId: parcel.id,
+      senderUserId: actor.userId,
+    });
 
     return parcel;
   }
@@ -114,7 +122,9 @@ export class ParcelService {
       throw new BadRequestException('Not your parcel');
     }
     if (!['pending', 'draft'].includes(parcel.status)) {
-      throw new BadRequestException(`Cannot cancel parcel in status '${parcel.status}'`);
+      throw new BadRequestException(
+        `Cannot cancel parcel in status '${parcel.status}'`,
+      );
     }
 
     await this.db

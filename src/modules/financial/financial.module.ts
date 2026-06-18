@@ -5,7 +5,10 @@ import { SplitService } from './split.service';
 import { RefundService } from './refund.service';
 import { BoxWalletLedgerClient } from './ledger/boxwallet-ledger.client';
 import { LEDGER_CLIENT } from './ledger/ledger-client';
-import { AdminFinancialController, VendorWalletController } from './financial.controller';
+import {
+  AdminFinancialController,
+  VendorWalletController,
+} from './financial.controller';
 import { FinancialSweepsCron } from '../scheduling/financial-sweeps.cron';
 import { EventBus } from '../../realtime/event-bus';
 
@@ -29,14 +32,19 @@ export class FinancialModule implements OnModuleInit {
   ) {}
 
   onModuleInit() {
-    this.eventBus.on<{ orderId: string; toStatus: string }>('order.status_changed', async (event) => {
-      const { orderId, toStatus } = event.payload;
-      if (toStatus === 'delivered') {
-        await this.split.confirmSplit(orderId).catch(() => null);
-      }
-      if (toStatus === 'cancelled') {
-        await this.refund.reverseOrderSplit(orderId, 'Order cancelled').catch(() => null);
-      }
-    });
+    this.eventBus.on<{ orderId: string; toStatus: string }>(
+      'order.status_changed',
+      async (event) => {
+        const { orderId, toStatus } = event.payload;
+        if (toStatus === 'delivered') {
+          await this.split.confirmSplit(orderId).catch(() => null);
+        }
+        if (toStatus === 'cancelled') {
+          await this.refund
+            .reverseOrderSplit(orderId, 'Order cancelled')
+            .catch(() => null);
+        }
+      },
+    );
   }
 }

@@ -9,5 +9,5 @@ export type Db = NodePgDatabase<FullSchema>;
 
 export function createDb(databaseUrl: string): Db {
   const pool = new Pool({ connectionString: databaseUrl });
-  return drizzle(pool, { schema: { ...schema, ...relations } as FullSchema });
+  return drizzle(pool, { schema: { ...schema, ...relations } });
 }

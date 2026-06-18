@@ -13,8 +13,8 @@ import {
 import type { StorefrontQueryDto } from './dto/catalog.dto';
 
 const TTL = {
-  vendorList: 60,    // 60 s — refreshes quickly as vendors go busy/offline
-  vendorPage: 120,   // 2 min — menu changes are less frequent
+  vendorList: 60, // 60 s — refreshes quickly as vendors go busy/offline
+  vendorPage: 120, // 2 min — menu changes are less frequent
   productList: 60,
   product: 120,
 };
@@ -44,7 +44,8 @@ export class StorefrontService {
     const key = `sf:vendors:${query.categoryId ?? 'all'}:${query.limit ?? 20}`;
     return this.cached(key, TTL.vendorList, () => {
       const conditions = [eq(organizations.isActive, true)];
-      if (query.categoryId) conditions.push(eq(organizations.categoryId, query.categoryId));
+      if (query.categoryId)
+        conditions.push(eq(organizations.categoryId, query.categoryId));
       return this.db.query.organizations.findMany({
         where: and(...conditions),
         with: { category: true },
@@ -57,7 +58,10 @@ export class StorefrontService {
     const key = `sf:vendor:${slug}`;
     const result = await this.cached(key, TTL.vendorPage, async () => {
       const org = await this.db.query.organizations.findFirst({
-        where: and(eq(organizations.slug, slug), eq(organizations.isActive, true)),
+        where: and(
+          eq(organizations.slug, slug),
+          eq(organizations.isActive, true),
+        ),
         with: {
           category: true,
           variantCollections: {

@@ -16,14 +16,21 @@ export const REDIS_TOKEN = 'REDIS_CLIENT';
         const log = new Logger('RedisModule');
 
         if (!url) {
-          log.warn('REDIS_URL not set — Redis disabled; using in-process fallbacks');
+          log.warn(
+            'REDIS_URL not set — Redis disabled; using in-process fallbacks',
+          );
           return null;
         }
 
-        const client = new Redis(url, { lazyConnect: true, maxRetriesPerRequest: 3 });
+        const client = new Redis(url, {
+          lazyConnect: true,
+          maxRetriesPerRequest: 3,
+        });
 
         client.on('connect', () => log.log('Redis connected'));
-        client.on('error', (err: Error) => log.error('Redis error', err.message));
+        client.on('error', (err: Error) =>
+          log.error('Redis error', err.message),
+        );
 
         return client;
       },

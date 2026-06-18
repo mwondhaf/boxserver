@@ -67,7 +67,9 @@ export class PromotionEngine {
         ),
       });
       if (usageCount.length >= promo.customerUsageLimit) {
-        throw new BadRequestException('Promotion usage limit reached for your account');
+        throw new BadRequestException(
+          'Promotion usage limit reached for your account',
+        );
       }
     }
 
@@ -96,7 +98,12 @@ export class PromotionEngine {
     };
   }
 
-  async recordUsage(promotionId: string, userId: string, orderId: string, discountAmount: number) {
+  async recordUsage(
+    promotionId: string,
+    userId: string,
+    orderId: string,
+    discountAmount: number,
+  ) {
     await this.db.insert(promotionUsages).values({
       promotionId,
       customerUserId: userId,

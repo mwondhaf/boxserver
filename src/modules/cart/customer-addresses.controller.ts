@@ -8,7 +8,13 @@ import {
   Post,
   Put,
 } from '@nestjs/common';
-import { ApiCookieAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiCookieAuth,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { CustomerAddressesService } from './customer-addresses.service';
 import { Actor } from '../../auth/actor.decorator';
 import type { ActorContext } from '../../auth/session.guard';
@@ -28,7 +34,11 @@ export class CustomerAddressesController {
   }
 
   @Post()
-  @ApiOperation({ summary: 'Create a delivery address', description: 'Saves a new address to the user\'s address book. Set isDefault: true to use it as the default checkout address.' })
+  @ApiOperation({
+    summary: 'Create a delivery address',
+    description:
+      "Saves a new address to the user's address book. Set isDefault: true to use it as the default checkout address.",
+  })
   @ApiResponse({ status: 201, description: 'Created address' })
   create(@Actor() actor: ActorContext, @Body() dto: CreateAddressDto) {
     return this.service.create(actor, dto);
@@ -47,7 +57,11 @@ export class CustomerAddressesController {
   }
 
   @Put(':id/default')
-  @ApiOperation({ summary: 'Set address as default', description: 'Marks this address as the default, and unmarks any previous default.' })
+  @ApiOperation({
+    summary: 'Set address as default',
+    description:
+      'Marks this address as the default, and unmarks any previous default.',
+  })
   @ApiParam({ name: 'id', example: 'addr_01abc' })
   @ApiResponse({ status: 200, description: 'Address set as default' })
   setDefault(@Actor() actor: ActorContext, @Param('id') id: string) {

@@ -10,7 +10,11 @@ export class StagesController {
 
   @Public()
   @Get()
-  @ApiOperation({ summary: 'List delivery stages', description: 'Public. Returns all operational delivery stages/zones that riders can be assigned to.' })
+  @ApiOperation({
+    summary: 'List delivery stages',
+    description:
+      'Public. Returns all operational delivery stages/zones that riders can be assigned to.',
+  })
   @ApiResponse({ status: 200, description: 'Array of stages' })
   list() {
     return this.service.listStages();

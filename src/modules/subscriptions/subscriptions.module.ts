@@ -11,8 +11,16 @@ import { SubscriptionCycleCron } from '../scheduling/subscription-cycle.cron';
 
 @Module({
   imports: [CountersModule],
-  providers: [SubscriptionPlanService, SubscriptionService, SubscriptionCycleCron],
-  controllers: [PublicPlansController, VendorPlansController, SubscriptionsController],
+  providers: [
+    SubscriptionPlanService,
+    SubscriptionService,
+    SubscriptionCycleCron,
+  ],
+  controllers: [
+    PublicPlansController,
+    VendorPlansController,
+    SubscriptionsController,
+  ],
   exports: [SubscriptionService],
 })
 export class SubscriptionsModule {}

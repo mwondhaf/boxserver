@@ -3,18 +3,26 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   Patch,
   Post,
 } from '@nestjs/common';
-import { ApiCookieAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiCookieAuth,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { OrganizationsService } from './organizations.service';
 import { Actor } from '../../auth/actor.decorator';
 import type { ActorContext } from '../../auth/session.guard';
 import {
+  AddMemberDto,
   UpdateOrganizationDto,
   UpdatePayoutDto,
-  InviteMemberDto,
   UpdateMemberRoleDto,
 } from './dto/create-organization.dto';
 
@@ -25,7 +33,11 @@ export class OrganizationsController {
   constructor(private readonly orgsService: OrganizationsService) {}
 
   @Get('me')
-  @ApiOperation({ summary: 'Get my organisation', description: 'Returns the organisation the authenticated vendor belongs to.' })
+  @ApiOperation({
+    summary: 'Get my organisation',
+    description:
+      'Returns the organisation the authenticated vendor belongs to.',
+  })
   @ApiResponse({ status: 200, description: 'Organisation record' })
   @ApiResponse({ status: 401, description: 'Not authenticated' })
   getMyOrganization(@Actor() actor: ActorContext) {
@@ -42,7 +54,11 @@ export class OrganizationsController {
   }
 
   @Patch('me')
-  @ApiOperation({ summary: 'Update my organisation', description: 'Updates store profile including availability, delivery options, and prep time.' })
+  @ApiOperation({
+    summary: 'Update my organisation',
+    description:
+      'Updates store profile including availability, delivery options, and prep time.',
+  })
   @ApiResponse({ status: 200, description: 'Updated organisation' })
   updateOrganization(
     @Actor() actor: ActorContext,
@@ -52,7 +68,10 @@ export class OrganizationsController {
   }
 
   @Patch('me/payout')
-  @ApiOperation({ summary: 'Update payout settings', description: 'Set mobile money or bank account details for vendor payouts.' })
+  @ApiOperation({
+    summary: 'Update payout settings',
+    description: 'Set mobile money or bank account details for vendor payouts.',
+  })
   @ApiResponse({ status: 200, description: 'Updated payout settings' })
   updatePayout(@Actor() actor: ActorContext, @Body() dto: UpdatePayoutDto) {
     return this.orgsService.updatePayout(actor, dto);
@@ -72,8 +91,21 @@ export class OrganizationsController {
     return this.orgsService.getMembers(actor);
   }
 
+  @Post('me/members')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Add a member to the organisation by email' })
+  @ApiResponse({ status: 201, description: 'Added member' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiResponse({ status: 409, description: 'Already a member' })
+  addMember(@Actor() actor: ActorContext, @Body() dto: AddMemberDto) {
+    return this.orgsService.addMember(actor, dto);
+  }
+
   @Patch('me/members/:memberId/role')
-  @ApiOperation({ summary: 'Update member role', description: 'Promote or demote a member between admin and member roles.' })
+  @ApiOperation({
+    summary: 'Update member role',
+    description: 'Promote or demote a member between admin and member roles.',
+  })
   @ApiParam({ name: 'memberId', example: 'member_01abc' })
   @ApiResponse({ status: 200, description: 'Updated member' })
   updateMemberRole(

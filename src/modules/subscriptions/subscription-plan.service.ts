@@ -13,29 +13,45 @@ import {
   subscriptionPlanItems,
   subscriptionPlanSlots,
 } from '../../db/schema/subscriptions';
-import { IsBoolean, IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
+import {
+  IsBoolean,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  Min,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Public } from '../../auth/session.guard';
 import type { ActorContext } from '../../auth/session.guard';
 
 export class CreatePlanDto {
   @ApiProperty({ example: 'Weekly Veggie Box' })
-  @IsString() name!: string;
+  @IsString()
+  name!: string;
 
   @ApiProperty({ example: 'weekly-veggie-box' })
-  @IsString() slug!: string;
+  @IsString()
+  slug!: string;
 
   @ApiPropertyOptional({ example: 'Fresh vegetables delivered every week' })
-  @IsString() @IsOptional() description?: string;
+  @IsString()
+  @IsOptional()
+  description?: string;
 
   @ApiProperty({ enum: ['weekly', 'biweekly', 'monthly'], example: 'weekly' })
-  @IsEnum(['weekly', 'biweekly', 'monthly'] as const) cadence!: string;
+  @IsEnum(['weekly', 'biweekly', 'monthly'] as const)
+  cadence!: string;
 
   @ApiProperty({ example: 4, description: 'Total number of delivery cycles' })
-  @IsInt() @Min(1) totalCycles!: number;
+  @IsInt()
+  @Min(1)
+  totalCycles!: number;
 
   @ApiProperty({ example: 45000, description: 'Bundle price per cycle in UGX' })
-  @IsInt() @Min(0) bundlePricePerCycle!: number;
+  @IsInt()
+  @Min(0)
+  bundlePricePerCycle!: number;
 }
 
 @Injectable()
@@ -45,12 +61,16 @@ export class SubscriptionPlanService {
   async listPublic(orgSlug?: string) {
     return this.db.query.subscriptionPlans.findMany({
       where: eq(subscriptionPlans.isActive, true),
-      with: { items: { with: { variant: { with: { product: true } } } }, slots: true },
+      with: {
+        items: { with: { variant: { with: { product: true } } } },
+        slots: true,
+      },
     });
   }
 
   async createPlan(actor: ActorContext, dto: CreatePlanDto) {
-    if (!actor.activeOrgId) throw new BadRequestException('No active organization');
+    if (!actor.activeOrgId)
+      throw new BadRequestException('No active organization');
 
     const [plan] = await this.db
       .insert(subscriptionPlans)
@@ -59,7 +79,8 @@ export class SubscriptionPlanService {
         name: dto.name,
         slug: dto.slug,
         description: dto.description,
-        cadence: dto.cadence as typeof subscriptionPlans.$inferInsert['cadence'],
+        cadence:
+          dto.cadence as (typeof subscriptionPlans.$inferInsert)['cadence'],
         totalCycles: dto.totalCycles,
         bundlePricePerCycle: dto.bundlePricePerCycle,
       })
@@ -78,7 +99,12 @@ export class SubscriptionPlanService {
     return updated;
   }
 
-  async addItem(planId: string, actor: ActorContext, variantId: string, quantity: number) {
+  async addItem(
+    planId: string,
+    actor: ActorContext,
+    variantId: string,
+    quantity: number,
+  ) {
     await this.assertOrgOwns(planId, actor);
     const [item] = await this.db
       .insert(subscriptionPlanItems)
@@ -90,7 +116,13 @@ export class SubscriptionPlanService {
   async addSlot(
     planId: string,
     actor: ActorContext,
-    dto: { dayOfWeek?: number; startHour?: number; endHour?: number; capacity?: number; label?: string },
+    dto: {
+      dayOfWeek?: number;
+      startHour?: number;
+      endHour?: number;
+      capacity?: number;
+      label?: string;
+    },
   ) {
     await this.assertOrgOwns(planId, actor);
     const [slot] = await this.db

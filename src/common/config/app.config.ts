@@ -6,6 +6,20 @@ export interface AppConfig {
   betterAuth: {
     secret: string;
     url: string;
+    frontendUrl: string;
+  };
+  google: {
+    clientId: string;
+    clientSecret: string;
+  };
+  resend: {
+    apiKey: string;
+    from: string;
+  };
+  sms: {
+    atApiKey: string;
+    atUsername: string;
+    senderId: string;
   };
   boxWallet: {
     baseUrl: string;
@@ -20,6 +34,7 @@ export interface AppConfig {
     bucket: string;
     accessKeyId: string;
     secretAccessKey: string;
+    publicBaseUrl: string;
   };
   distanceProviderKey: string;
   currency: string;
@@ -40,6 +55,20 @@ export const appConfig = registerAs('app', (): AppConfig => {
     betterAuth: {
       secret: required('BETTER_AUTH_SECRET'),
       url: process.env['BETTER_AUTH_URL'] ?? 'http://localhost:3000',
+      frontendUrl: process.env['FRONTEND_URL'] ?? 'http://localhost:3002',
+    },
+    google: {
+      clientId: process.env['GOOGLE_CLIENT_ID'] ?? '',
+      clientSecret: process.env['GOOGLE_CLIENT_SECRET'] ?? '',
+    },
+    resend: {
+      apiKey: process.env['RESEND_API_KEY'] ?? '',
+      from: process.env['RESEND_FROM'] ?? 'noreply@boxkubox.com',
+    },
+    sms: {
+      atApiKey: process.env['AT_API_KEY'] ?? '',
+      atUsername: process.env['AT_USERNAME'] ?? 'sandbox',
+      senderId: process.env['AT_SENDER_ID'] ?? 'BoxConv',
     },
     boxWallet: {
       baseUrl:
@@ -51,10 +80,11 @@ export const appConfig = registerAs('app', (): AppConfig => {
       webhookSecret: process.env['RELWORX_WEBHOOK_SECRET'] ?? '',
     },
     storage: {
-      endpoint: process.env['STORAGE_ENDPOINT'] ?? '',
+      endpoint: required('STORAGE_ENDPOINT'),
       bucket: process.env['STORAGE_BUCKET'] ?? 'boxserver',
-      accessKeyId: process.env['STORAGE_ACCESS_KEY_ID'] ?? '',
-      secretAccessKey: process.env['STORAGE_SECRET_ACCESS_KEY'] ?? '',
+      accessKeyId: required('STORAGE_ACCESS_KEY_ID'),
+      secretAccessKey: required('STORAGE_SECRET_ACCESS_KEY'),
+      publicBaseUrl: required('STORAGE_PUBLIC_URL'),
     },
     distanceProviderKey: process.env['DISTANCE_PROVIDER_KEY'] ?? '',
     currency: process.env['DEFAULT_CURRENCY'] ?? 'UGX',

@@ -102,9 +102,7 @@ export class CustomerAddressesService {
 
   async remove(actor: ActorContext, id: string) {
     await this.assertOwner(actor.userId, id);
-    await this.db
-      .delete(customerAddresses)
-      .where(eq(customerAddresses.id, id));
+    await this.db.delete(customerAddresses).where(eq(customerAddresses.id, id));
     return { deleted: id };
   }
 
@@ -116,7 +114,8 @@ export class CustomerAddressesService {
       ),
     });
     if (!addr) throw new NotFoundException('Address not found');
-    if (addr.userId !== userId) throw new ForbiddenException('Not your address');
+    if (addr.userId !== userId)
+      throw new ForbiddenException('Not your address');
     return addr;
   }
 

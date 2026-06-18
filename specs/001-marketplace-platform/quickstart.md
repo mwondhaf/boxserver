@@ -32,27 +32,40 @@ npm run db:push        # or db:migrate
 npm run db:seed        # categories, zones, pricing rules, a demo vendor + products, a demo rider
 ```
 
-## 3. Run
+## 3. Create platform users
+Platform roles (`admin`, `rider`, `customer`) cannot be set at signup — use the CLI:
+
+```bash
+# Admin (default role when --role is omitted)
+npm run db:create-user -- --name "Alice Admin" --email alice@boxkubox.com --password "s3cr3t" --role admin
+
+# Rider
+npm run db:create-user -- --name "Bob Rider" --email bob@boxkubox.com --password "s3cr3t" --role rider
+```
+
+The script calls Better Auth's internal `signUpEmail` (correct password hashing, creates both `users` and `accounts` rows), then sets `platform_role` in the DB. Requires `DATABASE_URL` in `.env`.
+
+## 4. Run
 ```bash
 npm run start:dev      # NestJS API on :3000 (REST + /api/auth + WS gateway)
 # in web/
 npm run dev            # TanStack Router client
 ```
 
-## 4. Quality gates (no unit/UX tests — Constitution Principle V)
+## 5. Quality gates (no unit/UX tests — Constitution Principle V)
 ```bash
 npm run build          # tsc strict — type safety is a primary gate
 npm run lint           # eslint + prettier — must pass before "done"
 ```
 
-## 5. Verify a core flow (manual, P1)
+## 6. Verify a core flow (manual, P1)
 1. Sign up (customer) at the client; create a vendor org → you become owner.
 2. As vendor: add a product + an available, priced variant.
 3. As customer: open the storefront, add to cart, `POST /checkout/quote`, then `POST /checkout/orders` (cash on delivery).
 4. As vendor: confirm → prepare → ready. Watch the order's realtime status update on the customer view without refreshing (SC-007).
 5. Confirm the price breakdown sums to the charged total (SC-002).
 
-## 6. Verify money flow (P2)
+## 7. Verify money flow (P2)
 1. Place a mobile-money order; approve via the Relworx sandbox callback (`POST /webhooks/relworx`).
 2. Confirm the order is `captured` exactly once and a single financial split is recorded (`GET /admin/financial/confirmations`) (SC-003).
 3. Cancel a paid order → verify refund + split reversal.

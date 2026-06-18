@@ -57,7 +57,10 @@ export class PricingEngine {
     }));
 
     const subtotal = lines.reduce((s, l) => s + l.subtotal, 0);
-    const markupTotal = lines.reduce((s, l) => s + l.markupAmount * l.quantity, 0);
+    const markupTotal = lines.reduce(
+      (s, l) => s + l.markupAmount * l.quantity,
+      0,
+    );
     const taxTotal = lines.reduce((s, l) => s + l.taxTotal, 0);
 
     let serviceFee = 0;
@@ -85,7 +88,12 @@ export class PricingEngine {
 
     const total = Math.max(
       0,
-      subtotal + serviceFee + smallOrderFee + deliveryFee + taxTotal - discountTotal,
+      subtotal +
+        serviceFee +
+        smallOrderFee +
+        deliveryFee +
+        taxTotal -
+        discountTotal,
     );
 
     return {

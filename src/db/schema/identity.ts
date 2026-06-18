@@ -31,7 +31,14 @@ export const users = pgTable('users', {
   emailVerified: boolean('email_verified').notNull().default(false),
   image: text('image'),
   phone: text('phone'),
+  phoneNumber: text('phone_number').unique(),
+  phoneNumberVerified: boolean('phone_number_verified')
+    .notNull()
+    .default(false),
   platformRole: platformRoleEnum('platform_role').notNull().default('customer'),
+  banned: boolean('banned').default(false),
+  banReason: text('ban_reason'),
+  banExpires: timestamp('ban_expires', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -131,13 +138,17 @@ export const organizations = pgTable(
     tin: text('tin'),
     contactPerson: text('contact_person'),
     contactPhone: text('contact_phone'),
+    contactPersonEmail: text('contact_person_email'),
 
     // Payout
     payoutMethod: payoutMethodEnum('payout_method'),
     payoutMobileNumber: text('payout_mobile_number'),
+    mobileMoneyProvider: text('mobile_money_provider'),
+    mobileMoneyName: text('mobile_money_name'),
     payoutBankName: text('payout_bank_name'),
     payoutBankAccount: text('payout_bank_account'),
     payoutBankBranch: text('payout_bank_branch'),
+    bankAccountName: text('bank_account_name'),
 
     // Location
     country: text('country').default('UG'),

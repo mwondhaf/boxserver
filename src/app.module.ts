@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD, APP_PIPE } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
+import { LoggerModule } from 'nestjs-pino';
 import type Redis from 'ioredis';
 import { ConfigModule } from './common/config/config.module';
 import { RedisModule, REDIS_TOKEN } from './common/redis/redis.module';
@@ -26,11 +27,27 @@ import { SubscriptionsModule } from './modules/subscriptions/subscriptions.modul
 import { AdminModule } from './modules/admin/admin.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { SessionGuard } from './auth/session.guard';
+import { PoliciesGuard } from './auth/casl/policies.guard';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
 import { globalValidationPipe } from './common/validation/validation.pipe';
 
 @Module({
   imports: [
+    LoggerModule.forRoot({
+      pinoHttp: {
+        level: process.env['NODE_ENV'] !== 'production' ? 'debug' : 'info',
+        transport:
+          process.env['NODE_ENV'] !== 'production'
+            ? { target: 'pino-pretty', options: { singleLine: true } }
+            : undefined,
+        redact: ['req.headers.authorization', 'req.headers.cookie'],
+        serializers: {
+          req(req: { method: string; url: string }) {
+            return { method: req.method, url: req.url };
+          },
+        },
+      },
+    }),
     RedisModule,
     ThrottlerModule.forRootAsync({
       inject: [REDIS_TOKEN],
@@ -67,6 +84,7 @@ import { globalValidationPipe } from './common/validation/validation.pipe';
   providers: [
     { provide: APP_FILTER, useClass: GlobalExceptionFilter },
     { provide: APP_GUARD, useClass: SessionGuard },
+    { provide: APP_GUARD, useClass: PoliciesGuard },
     { provide: APP_PIPE, useValue: globalValidationPipe },
   ],
 })

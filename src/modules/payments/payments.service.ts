@@ -1,4 +1,9 @@
-import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import { DB_TOKEN } from '../../db/drizzle.module';
 import type { Db } from '../../db/client';
@@ -13,16 +18,25 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CollectPaymentDto {
   @ApiProperty({ example: 'order_01abc' })
-  @IsString() orderId!: string;
+  @IsString()
+  orderId!: string;
 
-  @ApiProperty({ example: '+256700000000', description: 'Mobile money number to charge' })
-  @IsString() phoneNumber!: string;
+  @ApiProperty({
+    example: '+256700000000',
+    description: 'Mobile money number to charge',
+  })
+  @IsString()
+  phoneNumber!: string;
 
   @ApiProperty({ example: 15000, description: 'Amount in UGX' })
-  @IsNumber() @Min(1) amount!: number;
+  @IsNumber()
+  @Min(1)
+  amount!: number;
 
   @ApiPropertyOptional({ example: 'Payment for order #1042' })
-  @IsString() @IsOptional() description?: string;
+  @IsString()
+  @IsOptional()
+  description?: string;
 }
 
 @Injectable()
@@ -58,7 +72,8 @@ export class PaymentsService {
       .insert(mobileMoneyPayments)
       .values({
         direction: 'inbound',
-        status: result.status as typeof mobileMoneyPayments.$inferInsert['status'],
+        status:
+          result.status as (typeof mobileMoneyPayments.$inferInsert)['status'],
         phoneNumber: dto.phoneNumber,
         amount: dto.amount,
         currency: 'UGX',
@@ -84,7 +99,7 @@ export class PaymentsService {
       await this.db
         .update(mobileMoneyPayments)
         .set({
-          status: status.status as typeof mobileMoneyPayments.$inferInsert['status'],
+          status: status.status,
           charge: status.charge,
         })
         .where(eq(mobileMoneyPayments.id, paymentId));
@@ -115,7 +130,7 @@ export class PaymentsService {
     await this.db
       .update(mobileMoneyPayments)
       .set({
-        status: newStatus as typeof mobileMoneyPayments.$inferInsert['status'],
+        status: newStatus,
         completedAt: new Date(),
       })
       .where(eq(mobileMoneyPayments.id, payment.id));

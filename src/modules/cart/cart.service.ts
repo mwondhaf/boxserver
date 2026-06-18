@@ -16,10 +16,7 @@ import {
 } from '../../db/schema/catalog';
 import { PlatformSettingsService } from '../platform-settings/platform-settings.service';
 import type { ActorContext } from '../../auth/session.guard';
-import type {
-  AddCartItemDto,
-  UpdateCartItemDto,
-} from './dto/cart.dto';
+import type { AddCartItemDto, UpdateCartItemDto } from './dto/cart.dto';
 
 @Injectable()
 export class CartService {
@@ -28,23 +25,45 @@ export class CartService {
     private readonly settings: PlatformSettingsService,
   ) {}
 
-  async getOrCreateCart(actor: ActorContext, organizationId: string, sessionId?: string) {
+  async getOrCreateCart(
+    actor: ActorContext,
+    organizationId: string,
+    sessionId?: string,
+  ) {
     const s = await this.settings.getSettings();
     const ttlHours = s.cartTtlHours;
     const expiresAt = new Date(Date.now() + ttlHours * 3600 * 1000);
 
     // Find existing unexpired cart for this actor + org
     const condition = actor.userId
-      ? and(eq(carts.userId, actor.userId), eq(carts.organizationId, organizationId))
+      ? and(
+          eq(carts.userId, actor.userId),
+          eq(carts.organizationId, organizationId),
+        )
       : sessionId
-      ? and(eq(carts.sessionId, sessionId), eq(carts.organizationId, organizationId))
-      : undefined;
+        ? and(
+            eq(carts.sessionId, sessionId),
+            eq(carts.organizationId, organizationId),
+          )
+        : undefined;
 
     if (!condition) throw new BadRequestException('User or session required');
 
     const existing = await this.db.query.carts.findFirst({
       where: condition,
-      with: { items: { with: { modifiers: true, variant: { with: { priceSet: { with: { amounts: true } }, product: { with: { images: true } } } } } } },
+      with: {
+        items: {
+          with: {
+            modifiers: true,
+            variant: {
+              with: {
+                priceSet: { with: { amounts: true } },
+                product: { with: { images: true } },
+              },
+            },
+          },
+        },
+      },
     });
 
     if (existing && existing.expiresAt > new Date()) return existing;
@@ -79,7 +98,14 @@ export class CartService {
             },
           },
         },
-        organization: { columns: { id: true, name: true, slug: true, minimumOrderAmount: true } },
+        organization: {
+          columns: {
+            id: true,
+            name: true,
+            slug: true,
+            minimumOrderAmount: true,
+          },
+        },
       },
     });
 
@@ -113,7 +139,10 @@ export class CartService {
 
     // Upsert cart item
     const existing = await this.db.query.cartItems.findFirst({
-      where: and(eq(cartItems.cartId, cartId), eq(cartItems.variantId, dto.variantId)),
+      where: and(
+        eq(cartItems.cartId, cartId),
+        eq(cartItems.variantId, dto.variantId),
+      ),
     });
 
     let itemId: string;
@@ -135,7 +164,9 @@ export class CartService {
 
     // Add modifiers
     if (dto.modifiers?.length) {
-      await this.db.delete(cartItemModifiers).where(eq(cartItemModifiers.cartItemId, itemId));
+      await this.db
+        .delete(cartItemModifiers)
+        .where(eq(cartItemModifiers.cartItemId, itemId));
       await this.db.insert(cartItemModifiers).values(
         dto.modifiers.map((m) => ({
           cartItemId: itemId,
@@ -148,7 +179,12 @@ export class CartService {
     return this.getCart(cartId, actor);
   }
 
-  async updateItem(cartId: string, itemId: string, actor: ActorContext, dto: UpdateCartItemDto) {
+  async updateItem(
+    cartId: string,
+    itemId: string,
+    actor: ActorContext,
+    dto: UpdateCartItemDto,
+  ) {
     const cart = await this.getCart(cartId, actor);
     this.assertCartOwner(cart, actor);
 
@@ -186,16 +222,17 @@ export class CartService {
   ): Promise<void> {
     // Group modifiers by group and validate min/max
     const options = await this.db.query.menuModifierOptions.findMany({
-      where: and(
-        eq(menuModifierOptions.isAvailable, true),
-      ),
+      where: and(eq(menuModifierOptions.isAvailable, true)),
       with: { group: true },
     });
 
     const selectedIds = new Set(modifiers.map((m) => m.modifierOptionId));
     for (const m of modifiers) {
       const opt = options.find((o) => o.id === m.modifierOptionId);
-      if (!opt) throw new BadRequestException(`Modifier option ${m.modifierOptionId} not found`);
+      if (!opt)
+        throw new BadRequestException(
+          `Modifier option ${m.modifierOptionId} not found`,
+        );
     }
   }
 }

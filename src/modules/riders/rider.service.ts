@@ -54,13 +54,15 @@ export class RiderService {
         riderCode,
         name: dto.name,
         phoneNumber: dto.phoneNumber,
-        vehicleType: dto.vehicleType as typeof riders.$inferInsert['vehicleType'],
+        vehicleType:
+          dto.vehicleType as (typeof riders.$inferInsert)['vehicleType'],
         vehiclePlate: dto.vehiclePlate,
         nationalId: dto.nationalId,
         drivingPermitNumber: dto.drivingPermitNumber,
         payoutMethod: dto.payoutMethod,
         payoutMobileNumber: dto.payoutMobileNumber,
-        employmentType: dto.employmentType as typeof riders.$inferInsert['employmentType'],
+        employmentType:
+          dto.employmentType as (typeof riders.$inferInsert)['employmentType'],
         accountStatus: 'pending',
       })
       .returning();
@@ -116,13 +118,13 @@ export class RiderService {
         userId: actor.userId,
         lat: '0',
         lng: '0',
-        status: dto.status as typeof riderLocations.$inferInsert['status'],
+        status: dto.status as (typeof riderLocations.$inferInsert)['status'],
         lastUpdatedAt: new Date(),
       })
       .onConflictDoUpdate({
         target: riderLocations.userId,
         set: {
-          status: dto.status as typeof riderLocations.$inferInsert['status'],
+          status: dto.status,
           lastUpdatedAt: new Date(),
         },
       });
